@@ -1,0 +1,107 @@
+import { exec } from 'child_process'
+import User from '../../genshin/model/user.js'
+import { getStoken } from './authkey.js'
+
+export const rulePrefix = '((#|\\*)?(B站|小破站|b站|Bilibili|bilibili|bili)|\\*|＊)'
+
+export async function checkPnpm() {
+  let npm = 'npm'
+  let ret = await execSync('pnpm -v')
+  if (ret.stdout) npm = 'pnpm'
+  return npm
+}
+
+async function execSync(cmd) {
+  return new Promise((resolve, reject) => {
+    exec(cmd, { windowsHide: true }, (error, stdout, stderr) => {
+      resolve({ error, stdout, stderr })
+    })
+  })
+}
+
+export async function getCk(e, s = false) {
+  e.isSr = true
+  let stoken = ''
+  let user = new User(e)
+  if (s) {
+    stoken = await getStoken(e)
+  }
+  if (typeof user.getCk === 'function') {
+    let ck = user.getCk()
+    Object.keys(ck).forEach(k => {
+      if (ck[k].ck) {
+        ck[k].ck = `${stoken}${ck[k].ck}`
+      }
+    })
+    return ck
+  }
+  let mysUser = (await user.user()).getMysUser('sr')
+  let ck
+  if (mysUser) {
+    ck = {
+      default: {
+        ck: `${stoken}${mysUser.ck}`,
+        uid: mysUser.getUid('sr'),
+        qq: '',
+        ltuid: mysUser.ltuid,
+        device_id: mysUser.device
+      }
+    }
+  }
+  return ck
+}
+
+const o = function (t, e) {
+  var n = "";
+  if (t.length < e) for (var r = 0; r < e - t.length; r++) n += "0";
+  return n + t;
+};
+const randomHex = function (t) {
+  for (var e = "", n = 0; n < t; n++) e += numToHex(16 * Math.random());
+  return o(e, t);
+};
+const numToHex = function (t) {
+  return Math.ceil(t).toString(16).toUpperCase();
+};
+const splitDate = function (t) {
+  void 0 === t && (t = Date.now());
+  var e = new Date(t),
+    n = e.getDate(),
+    r = e.getHours(),
+    o = e.getMinutes(),
+    i = e.getTime();
+  return {
+    day: n,
+    hour: r,
+    minute: o,
+    second: Math.floor(i / 1e3),
+    millisecond: i,
+  };
+};
+
+// 提取 _uuid
+export const getUuid = function () {
+  const r = randomHex;
+  const UUID = (
+    r(8) +
+    "-" +
+    r(4) +
+    "-" +
+    r(4) +
+    "-" +
+    r(4) +
+    "-" +
+    r(12) +
+    o(String(Date.now() % 1e5), 5) +
+    "infoc"
+  )
+  return `_uuid=${UUID}`;
+};
+// 提取 b_lsid
+export const getBLsid = () => {
+  const TIME = splitDate(),
+    HEX = numToHex(TIME.millisecond),
+    BLSID = randomHex(8) + "_" + HEX;
+
+  return `b_lsid=${BLSID}`;
+};
