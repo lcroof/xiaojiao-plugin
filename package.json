@@ -1,0 +1,15 @@
+{
+  "name": "bilibili-plugin",
+  "version": "1.0.0",
+  "author": "lcroof",
+  "description": "bilibili-plugin",
+  "type": "module",
+  "scripts": {
+  },
+  "devDependencies": {
+    
+  },
+  "pnpm": {
+    "patchedDependencies": {}
+  }
+}
