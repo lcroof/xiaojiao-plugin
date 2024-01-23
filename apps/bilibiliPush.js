@@ -21,7 +21,7 @@ export class BilibiliPush extends plugin {
           fnc: 'getBilibiliPushUserList'
         },
         {
-          reg: `^${rulePrefix}(开启|关闭|允许|禁止)群B站推送\\s*.*$`,
+          reg: `^${rulePrefix}(开启|关闭|允许|禁止)群推送\\s*.*$`,
           fnc: 'changeGroupBilibiliPush'
         },
         {
@@ -41,8 +41,12 @@ export class BilibiliPush extends plugin {
           fnc: 'changeBiliPushTransmit'
         },
         {
-          reg: `^${rulePrefix}设置(全局)?B站推送(默认|合并|图片)$`,
+          reg: `^${rulePrefix}设置(全局)?推送(默认|合并|图片)$`,
           fnc: 'setBiliPushSendType'
+        },
+        {
+          reg: `^${rulePrefix}(开启|关闭|允许|禁止)群\\s*.*推送\\s*.*$`,
+          fnc: 'setBiliGroupMemberPush'
         },
         {
           reg: '^#*测试B站推送$',
@@ -147,5 +151,9 @@ export class BilibiliPush extends plugin {
     {
       e.reply("成功设置推送模式");
     }
+  }
+
+  async pushScheduleJob(e) {
+    bilibili.pushScheduleJob(e);
   }
 }

@@ -40,8 +40,8 @@ export default function runtimeRender (e, path, renderData = {}, cfg = {}) {
   scale = (cfg.scale || 1) * scale
   const pct = `style='transform:scale(${scale})'`
   const layoutPath =
-    process.cwd() + '/plugins/StarRail-plugin/resources/common/layout/'
-  return e.runtime.render('StarRail-plugin', path, renderData, {
+    process.cwd() + '/plugins/bilibili-plugin/resources/common/layout/'
+  return e.runtime.render('bilibili-plugin', path, renderData, {
     ...cfg,
     beforeRender ({ data }) {
       let resPath = data.pluResPath
@@ -53,8 +53,8 @@ export default function runtimeRender (e, path, renderData = {}, cfg = {}) {
         elemLayout: layoutPath + 'elem.html',
         sys: {
           scale: pct,
-          copyright: `Created By ${Version.name}<span class="version">${Version.yunzai}</span> & StarRail-plugin<span class="version">${Version.version}</span>`,
-          createdby: `Created By ${Version.name} & StarRail-plugin`
+          copyright: `Created By ${Version.name}<span class="version">${Version.yunzai}</span> & bilibili-plugin<span class="version">${Version.version}</span>`,
+          createdby: `Created By ${Version.name} & bilibili-plugin`
         },
         Math,
         MathPro,

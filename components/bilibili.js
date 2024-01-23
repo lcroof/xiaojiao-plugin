@@ -92,8 +92,6 @@ async function initBiliPushJson() {
   }
 }
 
-initBiliPushJson(); // 初始化
-
 /**
  * 开启|关闭B站推送
  * @param {*} e 
@@ -235,7 +233,7 @@ export async function updateBilibiliPush(e) {
     return true;
   }
 
-  let msgList = e.msg.split("B站推送");
+  let msgList = e.msg.split("推送");
   const addComms = ["订阅", "添加", "新增", "增加", "#订阅", "#添加", "#新增", "#增加"];
   const delComms = ["删除", "移除", "去除", "取消", "#删除", "#移除", "#去除", "#取消"];
 
@@ -542,6 +540,26 @@ export async function setBiliPushSendType(e) {
   return true;
 }
 
+// 定时任务
+export async function task() {
+  // Cron表达式，每到[5,15,25,35,45,55]分钟执行一次
+  let scheduleConfig = "0 5,15,25,35,45,55 * * * ?"; // 默认
+  let timeInter = Number(BilibiliPushConfig.dynamicPushTimeInterval);
+  // 做好容错，防一手乱改配置文件
+  if (!isNaN(timeInter)) {
+    timeInter = Math.ceil(timeInter); // 确保一定是整数
+    if (timeInter <= 0) timeInter = 1; // 确保一定大于等于 1
+
+    scheduleConfig = `0 0/${timeInter} * * * ?`;
+    if (timeInter >= 60) {
+      scheduleConfig = `0 0 * * * ?`;
+    }
+  }
+
+  // B站动态推送
+  schedule.scheduleJob(scheduleConfig, () => pushScheduleJob());
+}
+
 /**
  * 推送定时任务
  * @param {*} e 
@@ -637,7 +655,7 @@ async function pushDynamic(pushInfo) {
     }
 
     let url = `${BiliDynamicApiUrl}?host_mid=${biliUID}`;
-    BiliReqHeaders.cookie = `DedeUserID=${biliUID}`
+    BiliReqHeaders.cookie = BilibiliCookies;
     const response = await fetch(url, { method: "get", headers: BiliReqHeaders });
 
     if (!response.ok) {
@@ -717,7 +735,7 @@ async function sendDynamic(info, biliUser, list) {
   Bot.logger.mark(`B站动态推送[${pushID}]`);
 
   for (let val of list) {
-    let msg = buildSendDynamic(biliUser, val, info);
+    let msg = buildBiliPushSendDynamic(biliUser, val, info);
     if (msg === "can't push transmit") {
       // 这不好在前边判断，只能放到这里了
       continue;
@@ -769,7 +787,7 @@ async function pushAgain(groupId, msg) {
  * @param {*} dynamic 
  * @param {*} info 
  */
-function buildSendDynamic(biliUser, dynamic, info) {
+function buildBiliPushSendDynamic(biliUser, dynamic, info) {
   let desc, msg, pics;
   let title = `B站【${biliUser.name}】动态推送：\n`;
 
@@ -938,3 +956,27 @@ function getSendType(info) {
   if (info.sendType) return info.sendType;
   return "default";
 }
+
+function updateBvAnalyse(e) {
+
+}
+
+function updateNgaAnalyse(e) {
+
+}
+
+export default {
+  updateBilibiliPush,
+  getBilibiliPushUserList,
+  changeGroupBilibiliPush,
+  setBiliPushCookie,
+  setBiliPushTimeInterval,
+  setBiliPushFaultTime,
+  changeBiliPushTransmit,
+  setBiliPushSendType,
+  updateBvAnalyse,
+  updateNgaAnalyse,
+  initBiliPushJson,
+  task,
+  pushScheduleJob
+};

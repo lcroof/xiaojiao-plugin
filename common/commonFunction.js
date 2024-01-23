@@ -190,7 +190,7 @@ function isAllowPushFunc(e) {
         pushID = e.user_id;
     }
 
-    let info = PushBilibiliDynamic[pushID];
+    let info = config[pushID];
     if (!info) return true;
 
     if (info.isGroup && info.adminPerm === false) return false;
@@ -199,6 +199,16 @@ function isAllowPushFunc(e) {
     if (info.allowPush === false) return false;
 
     return info.allowPush !== false;
+}
+
+function isAllowUrlAnaylseFunc(e) {
+    if (e.isMaster) {
+        return true;
+    }
+let info = "";
+    if (e.isGroup) {
+        info = "";
+    }
 }
 
 /**

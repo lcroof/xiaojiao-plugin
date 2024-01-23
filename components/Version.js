@@ -2,7 +2,7 @@ import fs from 'fs'
 import lodash from 'lodash'
 
 const _path = process.cwd()
-const _logPath = `${_path}/plugins/StarRail-plugin/CHANGELOG.md`
+const _logPath = `${_path}/plugins/bilibili-plugin/CHANGELOG.md`
 
 let logs = {}
 let changelogs = []

@@ -14,19 +14,34 @@ export class BilibiliAnalyse extends plugin {
                 {
                     reg: `^${rulePrefix}(开启|关闭)视频解析$`,
                     fnc: 'updateBilibiliAnalyse'
+                },
+                {
+                    reg: `^$(开启|关闭)NGA链接解析$`,
+                    fnc: 'updateNgaAnalyse'
                 }
-            ]
+            ] 
         })
     }
 
     /**
-       * 修改推送
+       * 修改bv解析
        * @param {*} e 
        * @returns 
        */
     async updateBilibiliAnalyse(e) {
-        if (bilibili.updateBilibiliPush(e)) {
-            e.reply("成功设置推送");
+        if (bilibili.updateBvAnalyse(e)) {
+            e.reply("成功设置解析");
+        }
+    }
+
+    /**
+       * 修改解析
+       * @param {*} e 
+       * @returns 
+       */
+      async updateNgaAnalyse(e) {
+        if (bilibili.updateNgaAnalyse(e)) {
+            e.reply("成功设置解析");
         }
     }
 }
