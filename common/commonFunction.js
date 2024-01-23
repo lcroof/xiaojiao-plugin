@@ -217,7 +217,7 @@ function getSendType(info, config) {
  * 存储B站推送配置信息
  * @param {*} config 
  */
-async function savePushJson(config) {
+function savePushJson(config) {
     this.saveData(PushBilibiliDynamic, config, 'json');
 }
 
@@ -225,7 +225,7 @@ async function savePushJson(config) {
  * 存储B站推送配置信息
  * @param {*} config 
  */
-async function saveConfigJson(config) {
+function saveConfigJson(config) {
     this.saveData(BilibiliPushConfig, config, 'json');
 }
 
@@ -235,6 +235,7 @@ const dataDir = _path + '/data/PushNews/'
  * 保存文件
  * @param {string} filename 
  * @param {string} data 
+ * @param {string} fileType 
  * @returns 
  */
 function saveData(filename, data, fileType) {
@@ -250,10 +251,9 @@ function saveData(filename, data, fileType) {
                 'utf-8'
             )
             return true
-        }
-        else if (fileType === 'yaml') {
+        } else {
             fs.writeFileSync(
-                `${dataDir}/${filename}.yaml`, data, 'utf-8'
+                `${dataDir}/${filename}.${fileType}`, data, 'utf-8'
             )
             return true
         }
@@ -266,35 +266,41 @@ function saveData(filename, data, fileType) {
 /**
  * 读取文件
  * @param {string} filename 
+ * @param {string} fileType 
  * @returns 
  */
-function readData(filename) {
+function readData(filename, fileType) {
     // 文件路径
-    const filePath = `${dataDir}/${filename}.json`
+    const filePath = `${dataDir}/${filename}.${fileType}`
     // 判断文件是否存在并读取文件
     if (fs.existsSync(filePath)) {
-        return JSON.parse(fs.readFileSync(filePath))
+        if (fileType === 'json') {
+            return JSON.parse(fs.readFileSync(filePath))
+        } else {
+            return fs.readFileSync(filePath)
+        }
     } else {
-        return []
+        return "";
     }
 }
 
 /**
- * @description: 读取JSON文件
- * @param {string} path 路径
- * @param {string} root 目录
- * @return {object}
+ * 是否允许使用这个功能
+ * @param {*} e 
  */
-function readJson(file, root = pluginRoot) {
-    if (fs.existsSync(`${root}/${file}`)) {
-        try {
-            return JSON.parse(fs.readFileSync(`${root}/${file}`, 'utf8'))
-        } catch (e) {
-            logger.error(e)
-        }
+function functionAllow(e) {
+    if (!isAllowPushFunc(e)) {
+        return false;
     }
-    return {}
+
+    if (e.isGroup && !isGroupAdmin(e) && !e.isMaster) {
+        e.reply("哒咩，只有管理员和master可以操作哦");
+        return false;
+    }
+    return true;
 }
+
+
 
 export default {
     relpyPrivate,
@@ -306,5 +312,6 @@ export default {
     isAllowPushFunc,
     getSendType,
     savePushJson,
-    saveConfigJson
+    saveConfigJson,
+    functionAllow
 };
