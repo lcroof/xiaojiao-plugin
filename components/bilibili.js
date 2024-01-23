@@ -3,6 +3,7 @@ import fetch from "node-fetch";
 import { segment } from "oicq";
 import common from "../common/commonFunction.js";
 import { botConfig } from "../common/commonFunction.js"
+import schedule from "node-schedule";
 
 const _path = process.cwd();
 const filePath = `${_path}/data/PushNews/`
@@ -19,6 +20,7 @@ let PushBilibiliDynamic = {}; // 推送对象列表
 
 const BiliDynamicApiUrl = "https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space";
 const BiliDrawDynamicLinkUrl = "https://m.bilibili.com/dynamic/"; // 图文动态链接地址
+const BiliVideoApiUrl = "https://api.bilibili.com/x/web-interface/view?bvid=";
 
 const BiliReqHeaders = {
   'cookie': '',
@@ -291,7 +293,7 @@ export async function updateBilibiliPush(e) {
       BilibiliCookies = common.readData("BilibiliCookies", "yaml");
     }
 
-    if (BilibiliCookies === "") {      
+    if (BilibiliCookies === "") {
       e.reply("没有设置cookies，你可以执行命令\n#B站推送ck [你的ck]\n来进行设置");
       return true;
     }
@@ -965,6 +967,95 @@ function updateNgaAnalyse(e) {
 
 }
 
+function msgAnalyse(e) {
+  bili(e);
+}
+
+async function bili(e) {
+  //判断是否开启
+
+  //获取cookies
+  BiliReqHeaders.cookie = BilibiliCookies;
+  let msg = e.msg
+  let urllist = ['b23.tv', 'm.bilibili.com', 'www.bilibili.com']
+  let reg2 = new RegExp(`${urllist[0]}|${urllist[1]}|${urllist[2]}`)
+  if (!msg && e.raw_message != '[json消息]' && e.raw_message != '[xml消息]') {
+    return false
+  }
+  if (e.raw_message == '[json消息]') {
+    let json = JSON.parse(e.message[0].data)
+    msg = msg || json.meta.detail_1?.qqdocurl || json.meta.news?.jumpUrl
+  }
+  if (e.raw_message == '[xml消息]') {
+    logger.warn(msg.toString())
+  }
+  if (!msg.match(reg2)) {
+    return false
+  }
+
+  let url = msg.match(`/(https?|http|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]/g`)[0]
+  let bilireg = /(BV.*?).{10}/
+  let bv = url.match(bilireg)
+  let videoInfo = {}
+  if (bv) {
+    // 存在bv长链接
+    bv = bv[0]
+  } else {
+    // 如果为短链接，先访问一次之后获取新的url再获取一次
+    await fetch(url, { method: "get", headers: BiliReqHeaders }).then(res => {
+      bv = res.url.match(bilireg)[0]
+    })
+  }
+  let bvUrl = BiliVideoApiUrl + `${bv}`
+  videoInfo = (await fetch(bvUrl, { method: "get", headers: BiliReqHeaders }).then(res => res.json()))?.data || {}
+
+  //   "data": {
+  // 		"bvid": "BV1TT4y1h7hd",
+  // 		"pic": "http://i1.hdslb.com/bfs/archive/b5712c8fedec591d755ec7a416df0a91d40db0bb.jpg",
+  // 		"title": "河南钻石也卖不动了！钻石最终会和玻璃一个价吗？暴跌100倍",
+  // 		"desc": "钻石，是近百年最疯狂的一场收割，明明是毫无价值的碳，却在资本的垄断与营销中成了爱情的象征。但如今，这场资本的收割狂欢似乎即将走向陌路，不管是钻石的价格还是销量，在今年都呈现出断崖式下跌。I DO这种钻石行业的巨头甚至直接被干倒闭了。那么， 到底是谁击溃了钻石行业呢？咱们今天就来一探究竟！",
+  // 		"duration": 483,--时长
+  // 		"owner": {
+  // 			"name": "老烟斗官方",
+  // 			"face": "https://i2.hdslb.com/bfs/face/1722f8806de219cf40a75617aef34e9cfd87284e.png"
+  // 		},
+  // 		"stat": {
+  // 			"view": 1721980,--观看
+  // 			"danmaku": 4149,--弹幕
+  // 			"reply": 6349,--回复
+  // 			"favorite": 5725,--收藏
+  // 			"coin": 2516,--投币
+  // 			"share": 5291,--分享
+  // 			"like": 38264,--点赞
+  // 		}
+  // }
+
+  let pic = videoInfo.data.pic
+  let videoTitle = videoInfo.data.title
+  let videoDesc = videoInfo.data.desc
+  let videoDuration = convertSecondsToHMS(videoInfo.data.duration)
+  let videoTime = videoDuration[0] + ":" + videoDuration[1] + ":" + videoDuration[2]
+  let upName = videoInfo.data.owner.name
+  let upFace = videoInfo.data.owner.face
+  let playTimes = videoInfo.data.stat.view.length > 4 ? Math.round(videoInfo.data.stat.view / 10000, 1) + "万" : videoInfo.data.stat.view
+  let danmaku = videoInfo.data.stat.view.danmaku > 4 ? Math.round(videoInfo.data.stat.danmaku / 10000, 1) + "万" : videoInfo.data.stat.danmaku
+  let reply = videoInfo.data.stat.view.reply > 4 ? Math.round(videoInfo.data.stat.reply / 10000, 1) + "万" : videoInfo.data.stat.reply
+  let favorite = videoInfo.data.stat.view.favorite > 4 ? Math.round(videoInfo.data.stat.favorite / 10000, 1) + "万" : videoInfo.data.stat.favorite
+  let coin = videoInfo.data.stat.view.coin > 4 ? Math.round(videoInfo.data.stat.coin / 10000, 1) + "万" : videoInfo.data.stat.coin
+  let share = videoInfo.data.stat.view.share > 4 ? Math.round(videoInfo.data.stat.share / 10000, 1) + "万" : videoInfo.data.stat.share
+  let like = videoInfo.data.stat.view.like > 4 ? Math.round(videoInfo.data.stat.like / 10000, 1) + "万" : videoInfo.data.stat.like
+}
+
+function convertSecondsToHMS(seconds) {
+  var hours = Math.floor(seconds / 3600); // 计算小时部分
+  seconds %= 3600; // 取余得到不足1小时的秒数
+
+  var minutes = Math.floor(seconds / 60); // 计算分钟部分
+  seconds %= 60; // 取余得到不足1分钟的秒数
+
+  return [hours, minutes, seconds];
+}
+
 export default {
   updateBilibiliPush,
   getBilibiliPushUserList,
@@ -978,5 +1069,6 @@ export default {
   updateNgaAnalyse,
   initBiliPushJson,
   task,
-  pushScheduleJob
+  pushScheduleJob,
+  msgAnalyse
 };

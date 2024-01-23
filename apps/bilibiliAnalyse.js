@@ -18,8 +18,12 @@ export class BilibiliAnalyse extends plugin {
                 {
                     reg: `^$(开启|关闭)NGA链接解析$`,
                     fnc: 'updateNgaAnalyse'
-                }
-            ] 
+                },
+                {
+                    reg: ``,
+                    fnc: 'msgAnalyse'
+                },
+            ]
         })
     }
 
@@ -39,9 +43,16 @@ export class BilibiliAnalyse extends plugin {
        * @param {*} e 
        * @returns 
        */
-      async updateNgaAnalyse(e) {
+    async updateNgaAnalyse(e) {
         if (bilibili.updateNgaAnalyse(e)) {
             e.reply("成功设置解析");
         }
+    }
+    /**
+     * 消息解析
+     * @param {*} e 
+     */
+    async msgAnalyse(e) {
+        bilibili.msgAnalyse(e);
     }
 }
