@@ -1,0 +1,28 @@
+{{extend defaultLayout}}
+
+{{block 'css'}}
+<link rel="stylesheet" href="{{pluResPath}}/analyasePanel/bvAnalyase.css">
+{{/block}}
+
+{{block 'main'}}
+<div class="other-text">
+    <div></div>
+    <div class="_copyright">by bilibili-Plugin</div>
+</div>
+<div class="data">
+    <div class="item-list">
+        {{each data char i}}
+        <div class="item">
+            <div class="title">{{data.title}}</div>
+            <div class="avatar">
+                <img src="{{pluResPath}}panel/resources/avatar/{{char.avatarId}}.png">
+            </div>
+            <div class="text" data-isCircle="{{type}}">
+                {{char.name}}
+                <div class="rank const-rank-{{char.rank}}">{{char.rank}}</div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div>
+{{/block}}

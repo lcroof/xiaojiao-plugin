@@ -1,4 +1,3 @@
-import setting from '../utils/setting.js'
 import Version from '../components/Version.js'
 const decimalAdjust = (type, value, exp = 0) => {
   type = String(type)
@@ -35,12 +34,10 @@ export default function runtimeRender (e, path, renderData = {}, cfg = {}) {
   if (!e.runtime) {
     console.log('未找到e.runtime，请升级至最新版Yunzai')
   }
-  let scale = setting.getConfig('gachaHelp').renderScale || 100
-  scale = Math.min(2, Math.max(0.5, scale / 100))
-  scale = (cfg.scale || 1) * scale
+  let scale = (cfg.scale || 1) * 1
   const pct = `style='transform:scale(${scale})'`
   const layoutPath =
-    process.cwd() + '/plugins/bilibili-plugin/resources/common/layout/'
+    process.cwd() + '/plugins/bilibili-plugin/resources/layout/'
   return e.runtime.render('bilibili-plugin', path, renderData, {
     ...cfg,
     beforeRender ({ data }) {

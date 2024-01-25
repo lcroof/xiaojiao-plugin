@@ -1,6 +1,6 @@
 import lodash from 'lodash'
 import { Data } from '../components/index.js'
-import HelpTheme from './help/HelpTheme.js'
+import HelpTheme from './components/HelpTheme.js'
 import { rulePrefix } from '../utils/common.js'
 import runtimeRender from '../common/runtimeRender.js'
 

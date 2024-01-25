@@ -4,6 +4,7 @@ import { segment } from "oicq";
 import common from "../common/commonFunction.js";
 import { botConfig } from "../common/commonFunction.js"
 import schedule from "node-schedule";
+import runtimeRender from '../common/runtimeRender.js'
 
 const _path = process.cwd();
 const filePath = `${_path}/data/PushNews/`
@@ -971,6 +972,14 @@ function msgAnalyse(e) {
   bili(e);
 }
 
+async function renderCard (e, data) {
+  let renderData = { data }
+  await runtimeRender(e, '/resources/analyasePanel/analyasePanel.html', renderData, {
+    escape: false,
+    scale: 1.6
+  })
+}
+
 async function bili(e) {
   //判断是否开启
 
@@ -1044,6 +1053,20 @@ async function bili(e) {
   let coin = videoInfo.data.stat.view.coin > 4 ? Math.round(videoInfo.data.stat.coin / 10000, 1) + "万" : videoInfo.data.stat.coin
   let share = videoInfo.data.stat.view.share > 4 ? Math.round(videoInfo.data.stat.share / 10000, 1) + "万" : videoInfo.data.stat.share
   let like = videoInfo.data.stat.view.like > 4 ? Math.round(videoInfo.data.stat.like / 10000, 1) + "万" : videoInfo.data.stat.like
+
+  try {
+    const data = await this.getPanelData(uid, true)
+    let renderData = {
+      data
+    }
+    // 渲染数据
+    await renderCard(e, renderData)
+    await e.reply( '解析成功' );
+    return false
+  } catch (error) {
+    logger.error('bilibili-Analyse', error)
+    return await e.reply(error.message)
+  }
 }
 
 function convertSecondsToHMS(seconds) {
