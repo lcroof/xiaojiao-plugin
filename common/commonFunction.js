@@ -323,5 +323,7 @@ export default {
     getSendType,
     savePushJson,
     saveConfigJson,
-    functionAllow
+    functionAllow,
+    saveData,
+    readData
 };

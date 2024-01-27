@@ -20,7 +20,7 @@ export class BilibiliAnalyse extends plugin {
                     fnc: 'updateNgaAnalyse'
                 },
                 {
-                    reg: ``,
+                    reg: `^.*(https|http)\\s*.*$`,
                     fnc: 'msgAnalyse'
                 },
             ]
@@ -53,6 +53,8 @@ export class BilibiliAnalyse extends plugin {
      * @param {*} e 
      */
     async msgAnalyse(e) {
-        bilibili.msgAnalyse(e);
+        if (e.group_id === 769801942 || e.group_id === 635198387) {
+            bilibili.msgAnalyse(e);
+        }
     }
 }

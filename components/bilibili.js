@@ -969,20 +969,17 @@ function updateNgaAnalyse(e) {
 }
 
 function msgAnalyse(e) {
-  bili(e);
+    bili(e);  
 }
 
 async function renderCard (e, data) {
-  let renderData = { data }
-  await runtimeRender(e, '/resources/analyasePanel/analyasePanel.html', renderData, {
+  await runtimeRender(e, '/analysePanel/bvAnalyse.html', data, {
     escape: false,
     scale: 1.6
   })
 }
 
 async function bili(e) {
-  //判断是否开启
-
   //获取cookies
   BiliReqHeaders.cookie = BilibiliCookies;
   let msg = e.msg
@@ -1002,7 +999,7 @@ async function bili(e) {
     return false
   }
 
-  let url = msg.match(`/(https?|http|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]/g`)[0]
+  let url = msg
   let bilireg = /(BV.*?).{10}/
   let bv = url.match(bilireg)
   let videoInfo = {}
@@ -1017,51 +1014,33 @@ async function bili(e) {
   }
   let bvUrl = BiliVideoApiUrl + `${bv}`
   videoInfo = (await fetch(bvUrl, { method: "get", headers: BiliReqHeaders }).then(res => res.json()))?.data || {}
+  let upInfoUrl = 'https://api.bilibili.com/x/relation/stat?vmid=' + videoInfo.owner.mid;
+  let upInfo = (await fetch(upInfoUrl, { method: "get", headers: BiliReqHeaders }).then(res => res.json()))?.data || {}
 
-  //   "data": {
-  // 		"bvid": "BV1TT4y1h7hd",
-  // 		"pic": "http://i1.hdslb.com/bfs/archive/b5712c8fedec591d755ec7a416df0a91d40db0bb.jpg",
-  // 		"title": "河南钻石也卖不动了！钻石最终会和玻璃一个价吗？暴跌100倍",
-  // 		"desc": "钻石，是近百年最疯狂的一场收割，明明是毫无价值的碳，却在资本的垄断与营销中成了爱情的象征。但如今，这场资本的收割狂欢似乎即将走向陌路，不管是钻石的价格还是销量，在今年都呈现出断崖式下跌。I DO这种钻石行业的巨头甚至直接被干倒闭了。那么， 到底是谁击溃了钻石行业呢？咱们今天就来一探究竟！",
-  // 		"duration": 483,--时长
-  // 		"owner": {
-  // 			"name": "老烟斗官方",
-  // 			"face": "https://i2.hdslb.com/bfs/face/1722f8806de219cf40a75617aef34e9cfd87284e.png"
-  // 		},
-  // 		"stat": {
-  // 			"view": 1721980,--观看
-  // 			"danmaku": 4149,--弹幕
-  // 			"reply": 6349,--回复
-  // 			"favorite": 5725,--收藏
-  // 			"coin": 2516,--投币
-  // 			"share": 5291,--分享
-  // 			"like": 38264,--点赞
-  // 		}
-  // }
+  let pic = videoInfo.pic
+  let videoTitle = videoInfo.title
+  let videoDesc = videoInfo.desc
+  let videoDuration = convertSecondsToHMS(videoInfo.duration)
+  let videoTime = videoDuration[1].toString().padStart(2, '0') + ":" + videoDuration[2].toString().padStart(2, '0')
+  if (videoDuration[0] > 1) {
+    videoTime = videoDuration[0] + ":" + videoTime
+  }
+  let upName = videoInfo.owner.name
+  let upFace = videoInfo.owner.face
+  let playTimes = videoInfo.stat.view > 10000 ? Math.round(videoInfo.stat.view / 1000) / 10 + "万" : videoInfo.stat.view
+  let danmaku = videoInfo.stat.danmaku > 10000 ? Math.round(videoInfo.stat.danmaku / 1000) / 10 + "万" : videoInfo.stat.danmaku
+  let reply = videoInfo.stat.reply > 10000 ? Math.round(videoInfo.stat.reply / 1000) / 10 + "万" : videoInfo.stat.reply
+  let favorite = videoInfo.stat.favorite > 10000 ? Math.round(videoInfo.stat.favorite / 1000) / 10 + "万" : videoInfo.stat.favorite
+  let coin = videoInfo.stat.coin > 10000 ? Math.round(videoInfo.stat.coin / 1000) / 10 + "万" : videoInfo.stat.coin
+  let share = videoInfo.stat.share > 10000 ? Math.round(videoInfo.stat.share / 1000) / 10 + "万" : videoInfo.stat.share
+  let like = videoInfo.stat.like > 10000 ? Math.round(videoInfo.stat.like / 1000) / 10 + "万" : videoInfo.stat.like
+  let fans = upInfo.follower > 10000 ? Math.round(upInfo.follower / 1000) / 10 + "万" : upInfo.follower
 
-  let pic = videoInfo.data.pic
-  let videoTitle = videoInfo.data.title
-  let videoDesc = videoInfo.data.desc
-  let videoDuration = convertSecondsToHMS(videoInfo.data.duration)
-  let videoTime = videoDuration[0] + ":" + videoDuration[1] + ":" + videoDuration[2]
-  let upName = videoInfo.data.owner.name
-  let upFace = videoInfo.data.owner.face
-  let playTimes = videoInfo.data.stat.view.length > 4 ? Math.round(videoInfo.data.stat.view / 10000, 1) + "万" : videoInfo.data.stat.view
-  let danmaku = videoInfo.data.stat.view.danmaku > 4 ? Math.round(videoInfo.data.stat.danmaku / 10000, 1) + "万" : videoInfo.data.stat.danmaku
-  let reply = videoInfo.data.stat.view.reply > 4 ? Math.round(videoInfo.data.stat.reply / 10000, 1) + "万" : videoInfo.data.stat.reply
-  let favorite = videoInfo.data.stat.view.favorite > 4 ? Math.round(videoInfo.data.stat.favorite / 10000, 1) + "万" : videoInfo.data.stat.favorite
-  let coin = videoInfo.data.stat.view.coin > 4 ? Math.round(videoInfo.data.stat.coin / 10000, 1) + "万" : videoInfo.data.stat.coin
-  let share = videoInfo.data.stat.view.share > 4 ? Math.round(videoInfo.data.stat.share / 10000, 1) + "万" : videoInfo.data.stat.share
-  let like = videoInfo.data.stat.view.like > 4 ? Math.round(videoInfo.data.stat.like / 10000, 1) + "万" : videoInfo.data.stat.like
+  let data = {pic,videoTitle,videoDesc,videoTime,upName,upFace,playTimes,danmaku,reply,favorite,coin,share,like,fans}
 
   try {
-    const data = await this.getPanelData(uid, true)
-    let renderData = {
-      data
-    }
     // 渲染数据
-    await renderCard(e, renderData)
-    await e.reply( '解析成功' );
+    await renderCard(e, data)
     return false
   } catch (error) {
     logger.error('bilibili-Analyse', error)

@@ -1,0 +1,123 @@
+.analyse {
+    width: 560px;
+}
+
+.upInfo {
+    width: 560px;
+    display: flex;
+    position: relative;
+}
+
+.upInfo .upIcon {
+    width: 60px;
+    height: 60px;
+}
+
+.upInfo .upName {
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    width: auto;
+    height: 60px;
+}
+
+.upInfo .fans {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    transition: opacity 0.3s;
+    z-index: 5;
+    font-size: 15px;
+    border-radius: 2px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    height: 48px;
+    color: #9499A0;
+}
+
+.title {
+    font-size: 25px;
+    font-family: "PingFang SC, HarmonyOS_Regular, Helvetica Neue, Microsoft YaHei, sans-serif;";
+    padding-bottom: 10px;
+}
+
+.video {
+    width: 480px;
+    padding-bottom: 4%;
+}
+
+.video .videoClass {
+    height: 320px;
+    position: relative;
+    border-radius: 6px;
+    background: #C9CCD0;
+    background: var(--graph_weak);
+    flex: 0 0 auto;
+}
+
+.video .videoClass .videoPic {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.video .videoClass .videoPic img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto;
+}
+
+.video .videoClass .videoInfoList {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    color: rgba(255, 255, 255, 1);
+    height: 20px;
+    line-height: 20px;
+    transition: opacity 0.3s;
+    z-index: 5;
+    font-size: 20px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 2px;
+    padding: 0 4px;
+    display: flex;
+}
+
+.descInfo {
+    font-size: 18px;
+    padding-top: 2%;
+    padding-bottom: 2%;
+}
+
+.toolBar {
+    display: flex;
+    align-items: center;
+    height: 24px;    
+}
+
+.toolBar .toolBarList{
+    position: relative;
+    display: flex;
+}
+
+.toolBar .toolBarList .icon{
+    flex-shrink: 0;
+    width: 24px;
+    display: flex;
+}
+
+.toolBar .toolBarList .text{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    width: 100px;
+    display: flex;
+    align-items: center;
+}

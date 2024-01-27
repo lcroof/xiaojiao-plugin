@@ -1,6 +1,6 @@
 import lodash from 'lodash'
 import fs from 'fs'
-import { Data } from 'index.js'
+import { Data } from './index.js'
 
 let HelpTheme = {
   async getThemeCfg (theme, exclude) {

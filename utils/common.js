@@ -1,6 +1,4 @@
 import { exec } from 'child_process'
-import User from '../../genshin/model/user.js'
-import { getStoken } from './authkey.js'
 
 export const rulePrefix = '((#|\\*)?(B站|小破站|b站|Bilibili|bilibili|bili)|\\*|＊)'
 
@@ -17,38 +15,6 @@ async function execSync(cmd) {
       resolve({ error, stdout, stderr })
     })
   })
-}
-
-export async function getCk(e, s = false) {
-  e.isSr = true
-  let stoken = ''
-  let user = new User(e)
-  if (s) {
-    stoken = await getStoken(e)
-  }
-  if (typeof user.getCk === 'function') {
-    let ck = user.getCk()
-    Object.keys(ck).forEach(k => {
-      if (ck[k].ck) {
-        ck[k].ck = `${stoken}${ck[k].ck}`
-      }
-    })
-    return ck
-  }
-  let mysUser = (await user.user()).getMysUser('sr')
-  let ck
-  if (mysUser) {
-    ck = {
-      default: {
-        ck: `${stoken}${mysUser.ck}`,
-        uid: mysUser.getUid('sr'),
-        qq: '',
-        ltuid: mysUser.ltuid,
-        device_id: mysUser.device
-      }
-    }
-  }
-  return ck
 }
 
 const o = function (t, e) {
