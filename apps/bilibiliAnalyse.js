@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { rulePrefix } from '../utils/common.js'
 import bilibili from "../components/bilibili.js"
+import nga from "../components/nga.js"
 
 
 export class BilibiliAnalyse extends plugin {
@@ -20,8 +21,8 @@ export class BilibiliAnalyse extends plugin {
                     fnc: 'updateNgaAnalyse'
                 },
                 {
-                    reg: `^.*(https|http)\\s*.*$`,
-                    fnc: 'msgAnalyse'
+                    reg: `(https|http):/\/(b23.tv+\/[A-Za-z0-9]+|bilibili.com/p+\/[A-Za-z0-9]+)$`,
+                    fnc: 'biliMsgAnalyse'
                 },
             ]
         })
@@ -52,9 +53,15 @@ export class BilibiliAnalyse extends plugin {
      * 消息解析
      * @param {*} e 
      */
-    async msgAnalyse(e) {
+    async biliMsgAnalyse(e) {
         if (e.group_id === 769801942 || e.group_id === 635198387) {
             bilibili.msgAnalyse(e);
+        }
+    }
+
+    async ngaMsgAnalyse(e) {
+        if (e.group_id === 769801942 || e.group_id === 635198387) {
+            nga.msgAnalyse(e);
         }
     }
 }

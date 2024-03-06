@@ -30,7 +30,7 @@ const MathPro = {
     return decimalAdjust('round', value, exp)
   }
 }
-export default function runtimeRender (e, path, renderData = {}, cfg = {}) {
+export default function runtimeRender(e, path, renderData = {}, cfg = {}) {
   if (!e.runtime) {
     console.log('未找到e.runtime，请升级至最新版Yunzai')
   }
@@ -40,7 +40,7 @@ export default function runtimeRender (e, path, renderData = {}, cfg = {}) {
     process.cwd() + '/plugins/bilibili-plugin/resources/layout/'
   return e.runtime.render('bilibili-plugin', path, renderData, {
     ...cfg,
-    beforeRender ({ data }) {
+    beforeRender({ data }) {
       let resPath = data.pluResPath
       return {
         ...data,
