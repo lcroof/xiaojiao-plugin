@@ -18,6 +18,7 @@ async function ngaContext(e) {
     let reply = `回复数：\n`;
 
     //根据回复长度生成多张图片，包括主题和热评回复和贴条
+    let data = [];
     let pic = renderCard(e, 'title', data);
     let pics = [pic, ...pics];
     pic = renderCard(e, 'reply', data);
@@ -37,7 +38,7 @@ async function ngaContext(e) {
 
 async function renderCard (e, htmlType, data) {
     let url = ``;
-    let data = {'omitBackground':'#fff', ...data}
+    data = {'omitBackground':'#fff', ...data}
     if (htmlType === 'title'){
         url =  `/analysePanel/ngaAnalyseTitle.html`;
     }

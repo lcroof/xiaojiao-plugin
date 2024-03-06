@@ -973,9 +973,10 @@ function msgAnalyse(e) {
 }
 
 async function renderCard (e, data) {
-  await runtimeRender(e, '/analysePanel/bvAnalyse.html', data, {
+  return await runtimeRender(e, '/analysePanel/bvAnalyse.html', data, {
     escape: false,
-    scale: 1.6
+    scale: 1.6,
+    retType: 'base64'
   })
 }
 
@@ -1040,8 +1041,9 @@ async function bili(e) {
 
   try {
     // 渲染数据
-    await renderCard(e, data)
-    return false
+    let aaa = await renderCard(e, data);
+    e.reply(aaa);
+    return false;
   } catch (error) {
     logger.error('bilibili-Analyse', error)
     return await e.reply(error.message)

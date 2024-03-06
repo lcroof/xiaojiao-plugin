@@ -21,8 +21,13 @@ export class BilibiliAnalyse extends plugin {
                     fnc: 'updateNgaAnalyse'
                 },
                 {
-                    reg: `(https|http):/\/(b23.tv+\/[A-Za-z0-9]+|bilibili.com/p+\/[A-Za-z0-9]+)$`,
+                    //reg: `(https|http)(:\\/\\/|://)(b23.tv.*\/[A-Za-z0-9]+|bilibili.com/p+\/[A-Za-z0-9]+)`,
+                    reg: `^.*b23.tv.*$`,
                     fnc: 'biliMsgAnalyse'
+                },
+                {
+                    reg: `(https://ngabbs).*tid\=[0-9]+`,
+                    fnc: 'ngaMsgAnalyse'
                 },
             ]
         })
@@ -58,7 +63,10 @@ export class BilibiliAnalyse extends plugin {
             bilibili.msgAnalyse(e);
         }
     }
-
+    /**
+     * 消息解析
+     * @param {*} e 
+     */
     async ngaMsgAnalyse(e) {
         if (e.group_id === 769801942 || e.group_id === 635198387) {
             nga.msgAnalyse(e);
