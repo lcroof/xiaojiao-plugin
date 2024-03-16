@@ -993,8 +993,10 @@ async function bili(e) {
   }
 
   //这段是测试用，输入原json到内容框内即可用
-  let json = JSON.parse(e.message[0].text)
-  msg = json.meta.detail_1?.qqdocurl || json.meta.news?.jumpUrl
+  if (e.raw_message !== '[json消息]' && e.raw_message !== '[xml消息]') {
+    let json = JSON.parse(e.message[0].text)
+    msg = json.meta.detail_1?.qqdocurl || json.meta.news?.jumpUrl
+  }
 
   if (e.raw_message == '[json消息]') {
     let json = JSON.parse(e.message[0].data)

@@ -37,7 +37,7 @@ export default function runtimeRender(e, path, renderData = {}, cfg = {}) {
   let scale = (cfg.scale || 1) * 1
   const pct = `style='transform:scale(${scale})'`
   const layoutPath =
-    process.cwd() + '/plugins/bilibili-plugin/resources/layout/'
+    process.cwd() + '/plugins/bilibili-plugin/resources/common/layout/'
   return e.runtime.render('bilibili-plugin', path, renderData, {
     ...cfg,
     beforeRender({ data }) {

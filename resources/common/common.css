@@ -1,27 +1,36 @@
-@charset "UTF-8";
 @font-face {
-  font-family: "SR";
-  src: url("./font/SR.ttf") format("truetype");
+  font-family: 'Number';
+  src: url("./font/tttgbnumber.woff") format('woff'), url("./font/tttgbnumber.ttf") format('truetype');
 }
 @font-face {
-  font-family: "tttgbnumber";
-  src: url("./font/tttgbnumber.ttf") format("truetype");
+  font-family: 'NZBZ';
+  src: url("./font/NZBZ.woff") format('woff'), url("./font/NZBZ.ttf") format('truetype');
 }
 @font-face {
-  font-family: "YS";
-  src: url("./font/YS.ttf") format("truetype");
+  font-family: 'YS';
+  src: url("./font/HYWH-65W.woff") format('woff'), url("./font/HYWH-65W.ttf") format('truetype');
 }
+.font-YS {
+  font-family: Number, "汉仪文黑-65W", YS, PingFangSC-Medium, "PingFang SC", sans-serif;
+}
+.font-NZBZ {
+  font-family: Number, "印品南征北战NZBZ体", NZBZ, "汉仪文黑-65W", YS, PingFangSC-Medium, "PingFang SC", sans-serif;
+}
+
 * {
-  box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 body {
-  font-family: "SR", sans-serif;
+  font-size: 18px;
+  color: #1e1f20;
+  font-family: Number, "汉仪文黑-65W", YS, PingFangSC-Medium, "PingFang SC", sans-serif;
   transform: scale(1.4);
   transform-origin: 0 0;
-  font-size: 18px;
   width: 600px;
 }
 
@@ -77,7 +86,6 @@ body {
   text-shadow: 1px 1px 1px #000;
   margin: 10px 0;
 }
-
 .copyright .version {
   color: #d3bc8e;
   display: inline-block;

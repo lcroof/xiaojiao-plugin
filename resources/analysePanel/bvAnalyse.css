@@ -1,12 +1,11 @@
 .analyse {
-    width: 560px;
+    width: 570px;
     padding: 10px 0px 5px 10px;
     background-color: rgba(159, 163, 200, 0.5);
     border-radius: 10px;
 }
 
 .upInfo {
-    width: 560px;
     display: flex;
     position: relative;    
 }
@@ -28,7 +27,7 @@
 .upInfo .fans {
     position: absolute;
     bottom: 6px;
-    right: 6px;
+    right: 20px;
     transition: opacity 0.3s;
     z-index: 5;
     font-size: 20px;

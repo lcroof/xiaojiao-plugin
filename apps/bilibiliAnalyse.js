@@ -21,7 +21,7 @@ export class BilibiliAnalyse extends plugin {
                     fnc: 'updateNgaAnalyse'
                 },
                 {
-                    reg: `.*(b23.tv.*\\/[A-Za-z0-9]+|bilibili.com\/p+\/[A-Za-z0-9]+).*$`,
+                    reg: `.*(b23.tv.*\\/[A-Za-z0-9]+|bilibili.com\/.*\/[A-Za-z0-9]+).*$`,
                     fnc: 'biliMsgAnalyse'
                 },
                 {
