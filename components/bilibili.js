@@ -5,6 +5,7 @@ import common from "../common/commonFunction.js";
 import { botConfig } from "../common/commonFunction.js"
 import schedule from "node-schedule";
 import runtimeRender from '../common/runtimeRender.js'
+import moment from "moment";
 
 const _path = process.cwd();
 const filePath = `${_path}/data/PushNews/`
@@ -973,11 +974,12 @@ function msgAnalyse(e) {
 }
 
 async function renderCard (e, data) {
-  return await runtimeRender(e, '/analysePanel/bvAnalyse.html', data, {
+  let type = await runtimeRender(e, '/analysePanel/bvAnalyse.html', data, {
     escape: false,
     scale: 1.6,
     retType: 'base64'
   })
+  return type;
 }
 
 async function bili(e) {
@@ -989,6 +991,11 @@ async function bili(e) {
   if (!msg && e.raw_message != '[json消息]' && e.raw_message != '[xml消息]') {
     return false
   }
+
+  //这段是测试用，输入原json到内容框内即可用
+  let json = JSON.parse(e.message[0].text)
+  msg = json.meta.detail_1?.qqdocurl || json.meta.news?.jumpUrl
+
   if (e.raw_message == '[json消息]') {
     let json = JSON.parse(e.message[0].data)
     msg = msg || json.meta.detail_1?.qqdocurl || json.meta.news?.jumpUrl
@@ -1026,6 +1033,7 @@ async function bili(e) {
   if (videoDuration[0] > 1) {
     videoTime = videoDuration[0] + ":" + videoTime
   }
+  let createTime = moment(new Date(videoInfo.ctime * 1000)).format('YYYY-MM-DD HH:mm:ss')
   let upName = videoInfo.owner.name
   let upFace = videoInfo.owner.face
   let playTimes = videoInfo.stat.view > 10000 ? Math.round(videoInfo.stat.view / 1000) / 10 + "万" : videoInfo.stat.view
@@ -1037,7 +1045,7 @@ async function bili(e) {
   let like = videoInfo.stat.like > 10000 ? Math.round(videoInfo.stat.like / 1000) / 10 + "万" : videoInfo.stat.like
   let fans = upInfo.follower > 10000 ? Math.round(upInfo.follower / 1000) / 10 + "万" : upInfo.follower
 
-  let data = {pic,videoTitle,videoDesc,videoTime,upName,upFace,playTimes,danmaku,reply,favorite,coin,share,like,fans}
+  let data = {pic,videoTitle,videoDesc,videoTime,upName,upFace,playTimes,danmaku,reply,favorite,coin,share,like,fans,createTime}
 
   try {
     // 渲染数据

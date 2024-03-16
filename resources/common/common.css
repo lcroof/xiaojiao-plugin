@@ -28,7 +28,8 @@ body {
 .container {
   width: 600px;
   padding: 20px 15px 10px 15px;
-  background-size: contain;
+  background-size: cover; 
+  background-image: url('biliPluginBgPic.jpg');
 }
 
 .head-box {
