@@ -5,4 +5,44 @@
 {{/block}}
 
 {{block 'main'}}
+<div class="analyse">
+    <div class="userName">
+        {{reply.userName}}
+    </div>
+    <div class="rvrc"><!--威望-->
+        {{reply.rvrc}}
+    </div>
+    <div class="floor">
+        {{reply.floor}}
+    </div>
+    <div class="registrationTime">
+        {{reply.registrationTime}}
+    </div>
+    <div class="postCount">
+        {{reply.postCount}}
+    </div>
+    <div class="postTime">
+        {{reply.postTime}}
+    </div>
+    <div class="postContent">
+        {{reply.postContent}}
+    </div>
+    <div class="voteGood">
+        {{reply.voteGood}}
+    </div>
+    <div class="voteBad">
+        {{reply.voteBad}}
+    </div>
+    <div class="userMemberGroup">
+        {{reply.userMemberGroup}}
+    </div>
+    {{each hotPostReply reply}}
+    <div class="hotpost userName">
+        {{reply.hotpostUserName}}
+    </div>
+    <div class="hotpost content">
+        {{reply.hotpostContent}}
+    </div>
+    {{/each}}
+</div>
 {{/block}}
