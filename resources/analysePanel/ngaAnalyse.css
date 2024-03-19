@@ -1,0 +1,108 @@
+.analyse {
+    background-color: rgb(236, 236, 27);
+}
+
+.divider {
+    border-bottom: 1px solid grey;
+    opacity: 0.5;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    width: 99%;
+}
+
+.dividerEnd {
+    border-bottom: 1px solid white;
+    opacity: 1;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.title {
+    font-size: large;
+}
+
+.header {
+    font-size: large;
+}
+
+.header .userGroup {
+    display: flex;
+}
+
+.header .userGroup .userName {
+    display: flex;
+}
+
+.header .userGroup .registrationTime {
+    display: flex;
+}
+
+.header .userInfo {
+    display: flex;
+}
+
+.header .userInfo .rvrc {
+    display: flex;
+}
+
+.header .userInfo .postCount {
+    display: flex;
+}
+
+.header .userInfo .userMemberGroup {
+    display: flex;
+}
+
+.content {
+    font-size: large;
+    display: flex;
+    position: relative;
+}
+
+.content .postContent {
+    display: flex;
+}
+
+.content .floor {
+    position: absolute;
+    transition: opacity 0.3s;
+    display: flex;
+    color: #9499A0;
+    right: 10px;
+}
+
+.content .postTime {
+    position: absolute;
+    transition: opacity 0.3s;
+    display: flex;
+    color: #9499A0;
+	bottom: 0px;
+    right: 10px;
+}
+
+.footer {
+    font-size: large;
+    display: flex;
+}
+
+.footer .voteGood {
+    display: flex;
+}
+
+.footer .voteBad {
+    display: flex;
+}
+
+.hotpost {
+    font-size: large;
+    display: flex;
+}
+
+.hotpost .userName {
+    display: flex;
+}
+
+.hotpost .postContent {
+    display: flex;
+}

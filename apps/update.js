@@ -52,9 +52,6 @@ export class Update extends plugin {
       return
     }
 
-    /** 检查git安装 */
-    if (!(await this.checkGit())) return
-
     const isForce = this.e.msg.includes('强制')
 
     /** 执行更新 */
@@ -105,7 +102,6 @@ export class Update extends plugin {
     } else {
       await this.reply(`bilibili-plugin\n最后更新时间：${time}`)
       this.isUp = true
-      /** 获取星铁组件的更新日志 */
       let log = await this.getLog('bilibili-plugin')
       await this.reply(log)
     }
@@ -116,12 +112,13 @@ export class Update extends plugin {
   }
 
   /**
-   * 获取星铁插件的更新日志
+   * 获取插件的更新日志
    * @param {string} plugin 插件名称
    * @returns
    */
   async getLog (plugin = '') {
-    let cm = `cd ./plugins/${plugin}/ && git log  -20 --oneline --pretty=format:"%h||[%cd]  %s" --date=format:"%m-%d %H:%M"`
+    let cm = 'git log -30 --pretty="%h||[%cd] %s" --date=format:"%F %T"'
+    if (plugin) cm = `cd "plugins/${plugin}" && ${cm}`
 
     let logAll
     try {
@@ -158,12 +155,11 @@ export class Update extends plugin {
    * @returns
    */
   async getcommitId (plugin = '') {
-    let cm = `git -C ./plugins/${plugin}/ rev-parse --short HEAD`
+    let cm = 'git rev-parse --short HEAD'
+    if (plugin) cm = `cd "plugins/${plugin}" && ${cm}`
 
-    let commitId = await execSync(cm, { encoding: 'utf-8' })
-    commitId = _.trim(commitId)
-
-    return commitId
+    const commitId = await execSync(cm, { encoding: 'utf-8' })
+    return lodash.trim(commitId)
   }
 
   /**
@@ -172,16 +168,18 @@ export class Update extends plugin {
    * @returns
    */
   async getTime (plugin = '') {
-    let cm = `cd ./plugins/${plugin}/ && git log -1 --oneline --pretty=format:"%cd" --date=format:"%m-%d %H:%M"`
+    let cm = 'git log -1 --pretty=%cd --date=format:"%F %T"'
+    if (plugin) cm = `cd "plugins/${plugin}" && ${cm}`
 
     let time = ''
     try {
       time = await execSync(cm, { encoding: 'utf-8' })
-      time = _.trim(time)
+      time = lodash.trim(time)
     } catch (error) {
       logger.error(error.toString())
       time = '获取时间失败'
     }
+
     return time
   }
 
@@ -192,42 +190,29 @@ export class Update extends plugin {
    * @returns
    */
   async gitErr (err, stdout) {
-    let msg = '更新失败！'
-    let errMsg = err.toString()
+    const msg = '更新失败！'
+    const errMsg = err.toString()
     stdout = stdout.toString()
 
     if (errMsg.includes('Timed out')) {
-      let remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')
-      await this.reply(msg + `\n连接超时：${remote}`)
-      return
+      const remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')
+      return this.reply(`${msg}\n连接超时：${remote}`)
     }
 
     if (/Failed to connect|unable to access/g.test(errMsg)) {
-      let remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')
-      await this.reply(msg + `\n连接失败：${remote}`)
-      return
+      const remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')
+      return this.reply(`${msg}\n连接失败：${remote}`)
     }
 
     if (errMsg.includes('be overwritten by merge')) {
-      await this.reply(
-        msg +
-        `存在冲突：\n${errMsg}\n` +
-        '请解决冲突后再更新，或者执行#强制更新，放弃本地修改'
-      )
-      return
+      return this.reply(`${msg}\n存在冲突：\n${errMsg}\n请解决冲突后再更新，或者执行#强制更新，放弃本地修改`)
     }
 
     if (stdout.includes('CONFLICT')) {
-      await this.reply([
-        msg + '存在冲突\n',
-        errMsg,
-        stdout,
-        '\n请解决冲突后再更新，或者执行#强制更新，放弃本地修改'
-      ])
-      return
+      return this.reply(`${msg}\n存在冲突：\n${errMsg}${stdout}\n请解决冲突后再更新，或者执行#强制更新，放弃本地修改`)
     }
 
-    await this.reply([errMsg, stdout])
+    return this.reply([errMsg, stdout])
   }
 
   /**
@@ -241,18 +226,5 @@ export class Update extends plugin {
         resolve({ error, stdout, stderr })
       })
     })
-  }
-
-  /**
-   * 检查git是否安装
-   * @returns
-   */
-  async checkGit () {
-    let ret = await execSync('git --version', { encoding: 'utf-8' })
-    if (!ret || !ret.includes('git version')) {
-      await this.reply('请先安装git')
-      return false
-    }
-    return true
   }
 }

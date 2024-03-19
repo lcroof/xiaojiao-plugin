@@ -1,8 +1,8 @@
 /* eslint-disable camelcase */
 import _ from 'lodash'
 import { rulePrefix } from '../utils/common.js'
-import bilibili from "../components/bilibili.js"
-
+import bili from "../components/bilibili.js"
+import biliPush from '../components/biliPush.js'
 
 export class BilibiliPush extends plugin {
   constructor(e) {
@@ -14,15 +14,15 @@ export class BilibiliPush extends plugin {
       rule: [
         {
           reg: `^${rulePrefix}(订阅|增加|新增|移除|去除|取消)推送\\s*.*$`,
-          fnc: 'updateBilibiliPush'
+          fnc: 'updateBiliPush'
         },
         {
           reg: `^${rulePrefix}推送(群)?列表$`,
-          fnc: 'getBilibiliPushUserList'
+          fnc: 'getBiliPushUserList'
         },
         {
           reg: `^${rulePrefix}(开启|关闭|允许|禁止)群推送\\s*.*$`,
-          fnc: 'changeGroupBilibiliPush'
+          fnc: 'changeGroupBiliPush'
         },
         {
           reg: `^${rulePrefix}推送ck\\s*.+$`,
@@ -62,8 +62,8 @@ export class BilibiliPush extends plugin {
    * @param {*} e 
    * @returns 
    */
-  async updateBilibiliPush(e) {
-    if (bilibili.updateBilibiliPush(e))
+  async updateBiliPush(e) {
+    if (bili.updateBilibiliPush(e))
     {
       e.reply("成功设置推送");
     }
@@ -74,8 +74,8 @@ export class BilibiliPush extends plugin {
    * @param {} e 
    * @returns 
    */
-  async getBilibiliPushUserList(e) {
-    if (bilibili.getBilibiliPushUserList(e))
+  async getBiliPushUserList(e) {
+    if (bili.getBilibiliPushUserList(e))
     {
       e.reply("成功设置推送列表");
     }
@@ -86,8 +86,8 @@ export class BilibiliPush extends plugin {
    * @param {*} e 
    * @returns 
    */
-  async changeGroupBilibiliPush(e) {
-    if (bilibili.changeGroupBilibiliPush(e))
+  async changeGroupBiliPush(e) {
+    if (bili.changeGroupBilibiliPush(e))
     {
       e.reply("成功设置群推送");
     }
@@ -99,7 +99,7 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async setBiliPushCookie(e) {
-    if (bilibili.setBiliPushCookie(e))
+    if (bili.setBiliPushCookie(e))
     {
       e.reply("成功设置cookie");
     }
@@ -111,7 +111,7 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async setBiliPushTimeInterval(e) {
-    if (bilibili.setBiliPushTimeInterval(e))
+    if (bili.setBiliPushTimeInterval(e))
     {
       e.reply("成功设置推送间隔时间");
     }
@@ -123,7 +123,7 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async setBiliPushFaultTime(e) {
-    if (bilibili.setBiliPushFaultTime(e))
+    if (bili.setBiliPushFaultTime(e))
     {
       e.reply("成功设置推送过期时间");
     }
@@ -135,7 +135,7 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async changeBiliPushTransmit(e) {
-    if (bilibili.changeBiliPushTransmit(e))
+    if (bili.changeBiliPushTransmit(e))
     {
       e.reply("成功设置转发推送");
     }
@@ -147,13 +147,16 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async setBiliPushSendType(e) {
-    if (bilibili.setBiliPushSendType(e))
+    if (bili.setBiliPushSendType(e))
     {
       e.reply("成功设置推送模式");
     }
   }
-
+  /**
+   * 测试推送
+   * @param {*} e 
+   */
   async pushScheduleJob(e) {
-    bilibili.pushScheduleJob(e);
+    biliPush.pushScheduleJob(e);
   }
 }

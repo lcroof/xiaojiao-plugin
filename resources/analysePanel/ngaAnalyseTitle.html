@@ -6,42 +6,57 @@
 
 {{block 'main'}}
 <div class="analyse">
-    <div class="userName">
-        {{reply.userName}}
+    <div class="title">
+        {{title}}
     </div>
-    <div class="rvrc"><!--威望-->
-        {{reply.rvrc}}
+    <div class="divider"></div>
+    <div class="header">
+        <div class="userGroup">
+            <div class="userName">
+                {{userName}}
+            </div>
+            <div class="registrationTime">
+                {{registrationTime}}
+            </div>
+        </div>
+        <div class="userInfo">
+            <div class="userMemberGroup">
+                {{userMemberGroup}}
+            </div>
+            <div class="rvrc"><!--威望-->
+                {{rvrc}}
+            </div>
+            <div class="postCount">
+                {{postCount}}
+            </div>
+        </div>
     </div>
-    <div class="floor">
-        {{reply.floor}}
+    <div class="divider"></div>
+    <div class="content">
+        <div class="postContent">
+            {{postContent}}
+        </div>
+        <div class="postTime">
+            {{postTime}}
+        </div>
     </div>
-    <div class="registrationTime">
-        {{reply.registrationTime}}
-    </div>
-    <div class="postCount">
-        {{reply.postCount}}
-    </div>
-    <div class="postTime">
-        {{reply.postTime}}
-    </div>
-    <div class="postContent">
-        {{reply.postContent}}
-    </div>
-    <div class="voteGood">
-        {{reply.voteGood}}
-    </div>
-    <div class="voteBad">
-        {{reply.voteBad}}
-    </div>
-    <div class="userMemberGroup">
-        {{reply.userMemberGroup}}
+    <div class="divider"></div>
+    <div class="footer">
+        <div class="voteGood">
+            {{voteGood}}
+        </div>
+        <div class="voteBad">
+            {{voteBad}}
+        </div>
     </div>
     {{each hotPostReply reply}}
-    <div class="hotpost userName">
-        {{reply.hotpostUserName}}
-    </div>
-    <div class="hotpost content">
-        {{reply.hotpostContent}}
+    <div class="hotpost">
+        <div class="userName">
+            {{reply.hotpostUserName}}
+        </div>
+        <div class="postContent">
+            {{reply.hotpostContent}}
+        </div>
     </div>
     {{/each}}
 </div>

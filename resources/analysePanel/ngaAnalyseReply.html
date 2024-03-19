@@ -7,42 +7,56 @@
 {{block 'main'}}
 <div class="analyse">
     {{each replyInfo reply}}
-    <div class="userName">
-        {{reply.userName}}
+    <div class="header">
+        <div class="userGroup">
+            <div class="userName">
+                {{reply.userName}}
+            </div>
+            <div class="registrationTime">
+                {{reply.registrationTime}}
+            </div>
+        </div>
+        <div class="userInfo">
+            <div class="userMemberGroup">
+                {{reply.userMemberGroup}}
+            </div>
+            <div class="rvrc"><!--威望-->
+                {{reply.rvrc}}
+            </div>
+            <div class="postCount">
+                {{reply.postCount}}
+            </div>
+        </div>
     </div>
-    <div class="rvrc"><!--威望-->
-        {{reply.rvrc}}
+    <div class="divider"></div>
+    <div class="content">
+        <div class="postContent">
+            {{reply.postContent}}
+        </div>
+        <div class="floor">
+            {{reply.floor}}
+        </div>
+        <div class="postTime">
+            {{reply.postTime}}
+        </div>
     </div>
-    <div class="floor">
-        {{reply.floor}}
-    </div>
-    <div class="registrationTime">
-        {{reply.registrationTime}}
-    </div>
-    <div class="postCount">
-        {{reply.postCount}}
-    </div>
-    <div class="postTime">
-        {{reply.postTime}}
-    </div>
-    <div class="postContent">
-        {{reply.postContent}}
-    </div>
-    <div class="voteGood">
-        {{reply.voteGood}}
-    </div>
-    <div class="voteBad">
-        {{reply.voteBad}}
-    </div>
-    <div class="userMemberGroup">
-        {{reply.userMemberGroup}}
+    <div class="divider"></div>
+    <div class="footer">
+        <div class="voteGood">
+            {{reply.voteGood}}
+        </div>
+        <div class="voteBad">
+            {{reply.voteBad}}
+        </div>
     </div>
     {{if reply.tietiao === 'true'}}
-    <div class="tietiao userName">
-        {{reply.tietiaoUserName}}
-    </div>
-    <div class="tietiao content">
-        {{reply.tietiaoContent}}
+    <div class="tietiao">
+        <div class="userName">
+            {{reply.tietiaoUserName}}
+        </div>
+        <div class="content">
+            {{reply.tietiaoContent}}
+        </div>
     </div>
     {{/if}}
     {{/each}}

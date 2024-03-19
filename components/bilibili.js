@@ -16,33 +16,7 @@ let BilibiliPushConfig = {}; // 推送配置
 let PushBilibiliDynamic = {}; // 推送对象列表
 const BiliVideoApiUrl = "https://api.bilibili.com/x/web-interface/view?bvid=";
 
-const BiliReqHeaders = {
-  'cookie': '',
-  'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-  'accept-encoding': 'gzip, deflate, br',
-  'accept-language': 'zh-CN,zh;q=0.9',
-  'cache-control': 'max-age=0',
-  'sec-ch-ua': '"Microsoft Edge";v="113", "Chromium";v="113", "Not-A.Brand";v="24"',
-  'sec-ch-ua-mobile': '?0',
-  'sec-ch-ua-platform': "Windows",
-  'sec-fetch-dest': 'document',
-  'sec-fetch-mode': 'navigate',
-  'sec-fetch-site': 'none',
-  'sec-fetch-user': '?1',
-  'upgrade-insecure-requests': '1',
-  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.50',
-}
-
-const BotHaveARest = 500; // 机器人每次发送间隔时间，腹泻式发送会不会不太妥？休息一下吧
-const BiliApiRequestTimeInterval = 2000; // B站动态获取api间隔多久请求一次，别太快防止被拉黑
-
-const DynamicPicCountLimit = 2; // 推送动态时，限制发送多少张图片
-const DynamicContentLenLimit = 50; // 推送文字和图文动态时，限制字数是多少
-const DynamicContentLineLimit = 3; // 推送文字和图文动态时，限制多少行文本
-
-let nowPushDate = Date.now(); // 设置当前推送的开始时间
 let pushTimeInterval = 10; // 推送间隔时间，单位：分钟
-let BilibiliCookies = "";
 
 // 延长过期时间的定义
 let DynamicPushTimeInterval = 60 * 60 * 1000; // 过期时间，单位：小时，默认一小时，范围[1,24]
@@ -140,7 +114,11 @@ export async function changeBilibiliPush(e) {
   return true;
 }
 
-// (开启|关闭|允许|禁止)群B站推送
+/**
+ * (开启|关闭|允许|禁止)群B站推送
+ * @param {*} e 
+ * @returns 
+ */
 export async function changeGroupBilibiliPush(e) {
   if (!e.isMaster) {
     return false;
@@ -277,7 +255,6 @@ export async function setBiliPushCookie(e) {
   if (!e.isMaster) {
     return false;
   }
-  BilibiliCookies = e.msg;
   common.saveData("BilibiliCookies", e.msg, "yaml");
 
   return true;
@@ -421,20 +398,24 @@ async function renderCard(e, data) {
   return type;
 }
 
+async function biliAnalyseTest(e) {
+  e.msg = '';
+  e.message = {data: ``}
+  e.raw_message = '[json消息]'
+  biliAnalyse(e);
+}
+
 async function biliAnalyse(e) {
   //获取cookies
-  BiliReqHeaders.cookie = BilibiliCookies;
+  let biliReqHeaders = common.BiliReqHeaders;
+  if (common.readData("BilibiliCookies", "yaml") !== "") {
+    biliReqHeaders.cookie = common.readData("BilibiliCookies", "yaml");
+  }
   let msg = e.msg
   let urllist = ['b23.tv', 'm.bilibili.com', 'www.bilibili.com']
   let reg2 = new RegExp(`${urllist[0]}|${urllist[1]}|${urllist[2]}`)
   if (!msg && e.raw_message != '[json消息]' && e.raw_message != '[xml消息]') {
     return false
-  }
-
-  //这段是测试用，输入原json到内容框内即可用
-  if (process.argv.includes('dev')) {
-    let json = JSON.parse(e.message[0].text)
-    msg = json.meta.detail_1?.qqdocurl || json.meta.news?.jumpUrl
   }
 
   if (e.raw_message == '[json消息]') {
@@ -457,14 +438,14 @@ async function biliAnalyse(e) {
     bv = bv[0]
   } else {
     // 如果为短链接，先访问一次之后获取新的url再获取一次
-    await fetch(url, { method: "get", headers: BiliReqHeaders }).then(res => {
+    await fetch(url, { method: "get", headers: biliReqHeaders }).then(res => {
       bv = res.url.match(bilireg)[0]
     })
   }
   let bvUrl = BiliVideoApiUrl + `${bv}`
-  videoInfo = (await fetch(bvUrl, { method: "get", headers: BiliReqHeaders }).then(res => res.json()))?.data || {}
+  videoInfo = (await fetch(bvUrl, { method: "get", headers: biliReqHeaders }).then(res => res.json()))?.data || {}
   let upInfoUrl = 'https://api.bilibili.com/x/relation/stat?vmid=' + videoInfo.owner.mid;
-  let upInfo = (await fetch(upInfoUrl, { method: "get", headers: BiliReqHeaders }).then(res => res.json()))?.data || {}
+  let upInfo = (await fetch(upInfoUrl, { method: "get", headers: biliReqHeaders }).then(res => res.json()))?.data || {}
 
   let pic = videoInfo.pic
   let videoTitle = videoInfo.title
@@ -508,6 +489,10 @@ function convertSecondsToHMS(seconds) {
   return [hours, minutes, seconds];
 }
 
+function updateBvAnalyse(e) {
+
+}
+
 export default {
   updateBilibiliPush,
   getBilibiliPushUserList,
@@ -518,5 +503,7 @@ export default {
   changeBiliPushTransmit,
   setBiliPushSendType,
   initBiliPushJson,
-  msgAnalyse
+  msgAnalyse,
+  updateBvAnalyse,
+  biliAnalyseTest
 };
