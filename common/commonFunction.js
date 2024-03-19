@@ -195,9 +195,6 @@ function isAllowPushFunc(e) {
 
     if (info.isGroup && info.adminPerm === false) return false;
 
-    // allowPush可能不存在，只在严格不等于false的时候才禁止
-    if (info.allowPush === false) return false;
-
     return info.allowPush !== false;
 }
 
@@ -205,7 +202,7 @@ function isAllowUrlAnaylseFunc(e) {
     if (e.isMaster) {
         return true;
     }
-let info = "";
+    let info = "";
     if (e.isGroup) {
         info = "";
     }
@@ -310,6 +307,51 @@ function functionAllow(e) {
     return true;
 }
 
+async function bilibiliUrlPost(url) {
+    const BiliReqHeaders = {
+        'cookie': '',
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'zh-CN,zh;q=0.9',
+        'cache-control': 'max-age=0',
+        'sec-ch-ua': '"Microsoft Edge";v="113", "Chromium";v="113", "Not-A.Brand";v="24"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': "Windows",
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'none',
+        'sec-fetch-user': '?1',
+        'upgrade-insecure-requests': '1',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.50',
+    }
+
+    let BilibiliCookies;
+    if (common.readData("BilibiliCookies", "yaml") !== "") {
+        BilibiliCookies = common.readData("BilibiliCookies", "yaml");
+    }
+
+    if (BilibiliCookies === "") {
+        e.reply("没有设置cookies，你可以执行命令\n#B站推送ck [你的ck]\n来进行设置");
+        return true;
+    }
+
+    BiliReqHeaders.cookie = BilibiliCookies;
+    const response = await fetch(url, { method: "get", headers: BiliReqHeaders });
+
+    if (!response.ok) {
+        e.reply("好像连不到B站了捏");
+        return true;
+    }
+
+    const res = await response.json();
+
+    if (res.code == '-352') {
+        e.reply("B站ck已过期，你可以执行命令\n#B站推送ck [你的ck]\n来替换过期的ck");
+        return true;
+    }
+    return res;
+}
+
 
 
 export default {
@@ -325,5 +367,6 @@ export default {
     saveConfigJson,
     functionAllow,
     saveData,
-    readData
+    readData,
+    bilibiliUrlPost
 };

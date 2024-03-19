@@ -49,7 +49,7 @@ export class BilibiliPush extends plugin {
           fnc: 'setBiliGroupMemberPush'
         },
         {
-          reg: '^#*测试B站推送$',
+          reg: '^测试B站推送$',
           fnc: 'pushScheduleJob'
         }
       ]
