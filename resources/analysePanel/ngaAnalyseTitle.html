@@ -49,7 +49,17 @@
             {{voteBad}}
         </div>
     </div>
-    {{each hotPostReply reply}}
+    {{each tietiao tietiao}}
+    <div class="tietiao">
+        <div class="userName">
+            {{tietiao.userName}}
+        </div>
+        <div class="content">
+            {{tietiao.content}}
+        </div>
+    </div>
+    {{/each}}
+    {{each hosPostList hotpost}}
     <div class="hotpost">
         <div class="userName">
             {{reply.hotpostUserName}}

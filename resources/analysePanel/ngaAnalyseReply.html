@@ -49,16 +49,16 @@
             {{reply.voteBad}}
         </div>
     </div>
-    {{if reply.tietiao === 'true'}}
+    {{each tietiao tietiao}}
     <div class="tietiao">
         <div class="userName">
-            {{reply.tietiaoUserName}}
+            {{tietiao.userName}}
         </div>
         <div class="content">
-            {{reply.tietiaoContent}}
+            {{tietiao.content}}
         </div>
     </div>
-    {{/if}}
+    {{/each}}
     {{/each}}
 </div>
 {{/block}}
