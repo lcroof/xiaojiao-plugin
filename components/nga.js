@@ -1,11 +1,10 @@
 import common from "../common/commonFunction.js";
 import runtimeRender from '../common/runtimeRender.js'
 import { botConfig } from "../common/commonFunction.js"
-import _, { rest } from "lodash";
-import { foregroundColorNames } from "chalk";
+import moment from "moment";
 
 async function ngaContext(e) {
-    let msg;
+    let msg = e.msg;
 
     if (e.raw_message == '[json消息]') {
         let json = JSON.parse(e.message[0].data)
@@ -22,17 +21,20 @@ async function ngaContext(e) {
     let tid = msg.match(/tid\=[0-9]+/);
     tid = tid[0].substring(4);
 
+    let formData = new FormData();
+    formData.append('tid', tid)
+
     //编一个RSS申请头，POST这个tid，获取所有data
     let postUrl = `https://ngabbs.com/app_api.php?__lib=post&__act=list`;
-    let postInfo = (await fetch(postUrl, {
+    let postInfo = await fetch(postUrl, {
         method: "POST",
         headers: {
             'X-User-Agent': 'NGA_skull/6.0.5(iPhone10,3;iOS 12.0.1)'
         },
-        body: new FormData().append('tid', tid)
-    }).then(res => res.json())) || {}
+        body: formData
+    }).then(res => res.json());
 
-    if (postInfo.code !== '0') {
+    if (postInfo.code !== 0) {
         e.reply(`未获取到主题内容`);
         return false;
     }
@@ -58,62 +60,60 @@ async function ngaContext(e) {
     let tempReplyPage = {};
     let ReplyPage = {};
     for (let result in postResult) {
-        if (result.lou === 0) {
+        if (postResult[result].lou === 0) {
             //0楼是楼主
             titlePage = {
-                userName: result.author.username,
-                registrationTime: moment(new Date(result.author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
-                userMemberGroup: result.author.member,
-                rvrc: result.author.rvrc,
-                postCount: result.author.postnum,
-                postContent: result.content,
-                postTime: moment(new Date(result.postdatetimestamp * 1000)).format('YYYY-MM-DD HH:mm:ss'),
-                voteGood: result.vote_good,
-                voteBad: result.vote_bad
+                userName: postResult[result].author.username,
+                registrationTime: moment(new Date(postResult[result].author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
+                userMemberGroup: postResult[result].author.member,
+                rvrc: postResult[result].author.rvrc,
+                postCount: postResult[result].author.postnum,
+                postContent: postResult[result].content,
+                postTime: moment(new Date(postResult[result].postdatetimestamp * 1000)).format('YYYY-MM-DD HH:mm:ss'),
+                voteGood: postResult[result].vote_good,
+                voteBad: postResult[result].vote_bad
             }
             if (postInfo.hot_post.length > 0) {
                 let hotPostList = {};
                 for (let hotPost in postInfo.hot_post) {
-                    hotPostList = hotPostList || {
-                        userName: hotPost.author.username,
-                        content: hotPost.content
-                    }
+                    hotPostList = {...hotPostList, ...{
+                        userName: postInfo.hot_post[hotPost].author.username,
+                        content: postInfo.hot_post[hotPost].content
+                    }}
                 }
-                titlePage = titlePage || {
-                    hotPostList: hotPostList
-                }
+                titlePage = {...titlePage, ...{hotPostList: hotPostList}}
             }
         } else {
             tempReplyPage = {
-                userName: result.author.username,
-                registrationTime: moment(new Date(result.author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
-                userMemberGroup: result.author.member,
-                rvrc: result.author.rvrc,
-                postCount: result.author.postnum,
-                postContent: result.content,
-                postTime: moment(new Date(result.postdatetimestamp * 1000)).format('YYYY-MM-DD HH:mm:ss'),
-                voteGood: result.vote_good,
-                voteBad: result.vote_bad,
-                floor: result.lou
+                userName: postResult[result].author.username,
+                registrationTime: moment(new Date(postResult[result].author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
+                userMemberGroup: postResult[result].author.member,
+                rvrc: postResult[result].author.rvrc,
+                postCount: postResult[result].author.postnum,
+                postContent: postResult[result].content,
+                postTime: moment(new Date(postResult[result].postdatetimestamp * 1000)).format('YYYY-MM-DD HH:mm:ss'),
+                voteGood: postResult[result].vote_good,
+                voteBad: postResult[result].vote_bad,
+                floor: postResult[result].lou
             }
         }
-        if (result.isTieTiao) {
+        if (postResult[result].isTieTiao) {
             let tieTiao = {};
-            for (let comment in result.comments) {
-                tieTiao = tieTiao || {
-                    userName: comment.author.username,
-                    content: comment.content
-                }
+            for (let comment in postResult[result].comments) {
+                tieTiao = {...tieTiao,  ...{
+                    userName: postResult[result].comments[comment].author.username,
+                    content: postResult[result].comments[comment].content
+                }}
             }
             if (tieTiao.length !== 0) {
-                if (result.lou === 0) {
-                    titlePage = titlePage || {
+                if (postResult[result].lou === 0) {
+                    titlePage = {...titlePage , ...{
                         tietiao: tieTiao
-                    }
+                    }}
                 } else {
-                    tempReplyPage = tempReplyPage || {
+                    tempReplyPage = {...tempReplyPage , ...{
                         tietiao: tieTiao
-                    }
+                    }}
                 }
             }
         }
@@ -127,9 +127,9 @@ async function ngaContext(e) {
     //根据回复长度生成多张图片，包括主题和热评回复和贴条
     let data = [];
     let pic = renderCard(e, 'title', titlePage);
-    let pics = [pic, ...pics];
+    let pics = [...pic, ...pics];
     pic = renderCard(e, 'reply', data);
-    pics = [pic, ...pics];
+    pics = [...pic, ...pics];
 
     //放在消息合并
     let sendMsg = msgCombine(ngaUrl, title, reply, pics);
@@ -149,13 +149,12 @@ async function renderCard(e, htmlType, data) {
     if (htmlType === 'title') {
         url = `/analysePanel/ngaAnalyseTitle.html`;
     }
-    if (htmlType === 'title') {
+    if (htmlType === 'reply') {
         url = `/analysePanel/ngaAnalyseReply.html`;
     }
     await runtimeRender(e, url, data, {
         escape: false,
         scale: 1.6,
-        retType: 'base64'
     });
 }
 

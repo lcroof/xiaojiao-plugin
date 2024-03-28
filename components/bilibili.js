@@ -27,11 +27,6 @@ let DynamicPushTimeInterval = 60 * 60 * 1000; // 过期时间，单位：小时�
 async function initBiliPushJson() {
   if (fs.existsSync(filePath + "PushBilibiliDynamic.json")) {
     PushBilibiliDynamic = common.readData("PushBilibiliDynamic", "json");
-    for (var item in PushBilibiliDynamic) {
-      item.isNewsPush = item.isNewsPush === "true" ? true : false;
-      item.isGroup = item.isGroup === "true" ? true : false;
-    }
-
   } else {
     common.savePushJson(PushBilibiliDynamic);
   }

@@ -16,18 +16,18 @@
                 {{userName}}
             </div>
             <div class="registrationTime">
-                {{registrationTime}}
+                注册时间:{{registrationTime}}
             </div>
         </div>
         <div class="userInfo">
             <div class="userMemberGroup">
-                {{userMemberGroup}}
+                级别:{{userMemberGroup}}
             </div>
             <div class="rvrc"><!--威望-->
-                {{rvrc}}
+                威望{{rvrc}}
             </div>
             <div class="postCount">
-                {{postCount}}
+                发帖数:{{postCount}}
             </div>
         </div>
     </div>
@@ -43,10 +43,10 @@
     <div class="divider"></div>
     <div class="footer">
         <div class="voteGood">
-            {{voteGood}}
+            赞同{{voteGood}}
         </div>
         <div class="voteBad">
-            {{voteBad}}
+            反对{{voteBad}}
         </div>
     </div>
     {{each tietiao tietiao}}
@@ -59,13 +59,13 @@
         </div>
     </div>
     {{/each}}
-    {{each hosPostList hotpost}}
+    {{each hotPostList hotpost}}
     <div class="hotpost">
         <div class="userName">
-            {{reply.hotpostUserName}}
+            {{hotpost.userName}}
         </div>
         <div class="postContent">
-            {{reply.hotpostContent}}
+            {{hotpost.content}}
         </div>
     </div>
     {{/each}}
