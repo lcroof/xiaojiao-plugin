@@ -1,7 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import common from "../../../lib/common/common.js"
 import { createRequire } from 'module'
-import _ from 'lodash'
+import lodash from 'lodash'
 import { Restart } from '../../other/restart.js'
 import { rulePrefix } from '../utils/common.js'
 
