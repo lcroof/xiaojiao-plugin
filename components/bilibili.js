@@ -393,7 +393,6 @@ async function renderCard(e, data) {
   let type = await runtimeRender(e, '/analysePanel/bvAnalyse.html', data, {
     escape: false,
     scale: 1.6,
-    retType: 'base64'
   })
   return type;
 }
@@ -438,7 +437,9 @@ async function biliAnalyse(e) {
     bv = bv[0]
   } else {
     // 如果为短链接，先访问一次之后获取新的url再获取一次
-    await fetch(url, { method: "get", headers: biliReqHeaders }).then(res => {
+    // 获取url
+    let shortUrl = url.match(/https.*b23.tv.*[A-Za-z0-9]+/);
+    await fetch(shortUrl, { method: "get", headers: biliReqHeaders }).then(res => {
       bv = res.url.match(bilireg)[0]
     })
   }

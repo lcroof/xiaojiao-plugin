@@ -241,7 +241,7 @@ function getSendType(info, config) {
  * @param {*} config 
  */
 function savePushJson(config) {
-    this.saveData(PushBilibiliDynamic, config, 'json');
+    this.saveData('PushBilibiliDynamic', config, 'json');
 }
 
 /**
@@ -249,7 +249,7 @@ function savePushJson(config) {
  * @param {*} config 
  */
 function saveConfigJson(config) {
-    this.saveData(BilibiliPushConfig, config, 'json');
+    this.saveData('BilibiliPushConfig', config, 'json');
 }
 
 const dataDir = _path + '/data/PushNews/'
