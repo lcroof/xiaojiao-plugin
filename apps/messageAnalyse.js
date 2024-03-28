@@ -21,11 +21,11 @@ export class MessageAnalyse extends plugin {
                     fnc: 'updateNgaAnalyse'
                 },
                 {
-                    reg: `.*(b23.tv.*\\/[A-Za-z0-9]+|bilibili.com\/.*\/[A-Za-z0-9]+).*$`,
+                    reg: /(b23.tv.*\\/[A-Za-z0-9]+|bilibili.com\/.*\/[A-Za-z0-9]+).*$/gis,
                     fnc: 'biliMsgAnalyse'
                 },
                 {
-                    reg: `(https://ngabbs).*tid\=[0-9]+`,
+                    reg: /(https://ngabbs).*tid\=[0-9]+/gis,
                     fnc: 'ngaMsgAnalyse'
                 },
                 {
