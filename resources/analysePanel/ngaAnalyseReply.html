@@ -7,61 +7,63 @@
 {{block 'main'}}
 <div class="analyse">
     {{each reply reply}}
-    <div class="header">
-        <div class="userGroup">
-            <div class="userName">
-                {{reply.userName}}
+    <div class="container">
+        <div class="header">
+            <div class="userGroup">
+                <div class="userName">
+                    {{reply.userName}}
+                </div>
+                <div class="registrationTime">
+                    注册时间:{{reply.registrationTime}}
+                </div>
             </div>
-            <div class="registrationTime">
-                注册时间:{{reply.registrationTime}}
+            <div class="userInfo">
+                <div class="userMemberGroup">
+                    级别:{{reply.userMemberGroup}}
+                </div>
+                <div class="rvrc"><!--威望-->
+                    威望:{{reply.rvrc}}
+                </div>
+                <div class="postCount">
+                    发帖数:{{reply.postCount}}
+                </div>
             </div>
         </div>
-        <div class="userInfo">
-            <div class="userMemberGroup">
-                级别:{{reply.userMemberGroup}}
-            </div>
-            <div class="rvrc"><!--威望-->
-                威望:{{reply.rvrc}}
-            </div>
-            <div class="postCount">
-                发帖数:{{reply.postCount}}
-            </div>
-        </div>
-    </div>
-    <div class="divider"></div>
-    <div class="content">
-        <div class="postContent">
-            {{reply.postContent}}
-        </div>
-        <div class="floor">
-            楼层:{{reply.floor}}
-        </div>
-        <div class="postTime">
-            {{reply.postTime}}
-        </div>
-    </div>
-    <div class="divider"></div>
-    <div class="footer">
-        <div class="voteGood">
-            {{reply.voteGood}}赞同
-        </div>
-        <div class="voteBad">
-            {{reply.voteBad}}反对
-        </div>
-    </div>
-    {{if reply.tietiao}}
-    <div class="divider"></div>
-    {{/if}}
-    {{each reply.tietiao tietiao}}
-    <div class="tietiao">
-        <div class="userName">
-            {{tietiao.userName}}
-        </div>
+        <div class="divider"></div>
         <div class="content">
-            {{tietiao.content}}
+            <div class="postContent">
+                {{reply.postContent}}
+            </div>
+            <div class="floor">
+                楼层:{{reply.floor}}
+            </div>
+            <div class="postTime">
+                {{reply.postTime}}
+            </div>
         </div>
+        <div class="divider"></div>
+        <div class="footer">
+            <div class="voteGood">
+                {{reply.voteGood}}赞同
+            </div>
+            <div class="voteBad">
+                {{reply.voteBad}}反对
+            </div>
+        </div>
+        {{if reply.tietiao}}
+        <div class="divider"></div>
+        {{/if}}
+        {{each reply.tietiao tietiao}}
+        <div class="tietiao">
+            <div class="userName">
+                {{tietiao.userName}}
+            </div>
+            <div class="content">
+                {{tietiao.content}}
+            </div>
+        </div>
+        {{/each}}
     </div>
-    {{/each}}
     <div class="dividerEnd"></div>
     {{/each}}
 </div>

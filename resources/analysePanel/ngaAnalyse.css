@@ -10,11 +10,16 @@
 }
 
 .dividerEnd {
-    border-bottom: 5px solid rgb(255, 255, 255);
+    border-bottom: 3px solid rgb(255, 255, 255);
     opacity: 1;
     margin-bottom: 10px;
     margin-top: 10px;
     width: 100%;
+}
+
+.container {
+    padding: 5px 5px 5px 5px;
+    background-color: rgba(241, 182, 45, 0.4);
 }
 
 .title {

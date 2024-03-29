@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { rulePrefix } from '../utils/common.js'
 import bili from "../components/bilibili.js"
 import nga from "../components/nga.js"

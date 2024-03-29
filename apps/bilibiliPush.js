@@ -1,5 +1,4 @@
 /* eslint-disable camelcase */
-import _ from 'lodash'
 import { rulePrefix } from '../utils/common.js'
 import bili from "../components/bilibili.js"
 import biliPush from '../components/biliPush.js'
