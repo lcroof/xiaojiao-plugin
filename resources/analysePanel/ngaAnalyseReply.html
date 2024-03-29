@@ -6,25 +6,25 @@
 
 {{block 'main'}}
 <div class="analyse">
-    {{each replyInfo reply}}
+    {{each reply reply}}
     <div class="header">
         <div class="userGroup">
             <div class="userName">
                 {{reply.userName}}
             </div>
             <div class="registrationTime">
-                {{reply.registrationTime}}
+                注册时间:{{reply.registrationTime}}
             </div>
         </div>
         <div class="userInfo">
             <div class="userMemberGroup">
-                {{reply.userMemberGroup}}
+                级别:{{reply.userMemberGroup}}
             </div>
             <div class="rvrc"><!--威望-->
-                {{reply.rvrc}}
+                威望:{{reply.rvrc}}
             </div>
             <div class="postCount">
-                {{reply.postCount}}
+                发帖数:{{reply.postCount}}
             </div>
         </div>
     </div>
@@ -34,7 +34,7 @@
             {{reply.postContent}}
         </div>
         <div class="floor">
-            {{reply.floor}}
+            楼层:{{reply.floor}}
         </div>
         <div class="postTime">
             {{reply.postTime}}
@@ -43,13 +43,16 @@
     <div class="divider"></div>
     <div class="footer">
         <div class="voteGood">
-            {{reply.voteGood}}
+            {{reply.voteGood}}赞同
         </div>
         <div class="voteBad">
-            {{reply.voteBad}}
+            {{reply.voteBad}}反对
         </div>
     </div>
-    {{each tietiao tietiao}}
+    {{if reply.tietiao}}
+    <div class="divider"></div>
+    {{/if}}
+    {{each reply.tietiao tietiao}}
     <div class="tietiao">
         <div class="userName">
             {{tietiao.userName}}
@@ -59,6 +62,7 @@
         </div>
     </div>
     {{/each}}
+    <div class="dividerEnd"></div>
     {{/each}}
 </div>
 {{/block}}
