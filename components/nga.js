@@ -6,8 +6,9 @@ import fetch from "node-fetch";
 
 async function ngaContext(e) {
     let msg = e.msg;
-    let titlePage = {};
-    let replyPage = {};
+    let titlePage = {}
+    let replyPage = {}
+    let allReply = []
 
     if (e.raw_message == '[json消息]') {
         let json = JSON.parse(e.message[0].data)
@@ -21,61 +22,60 @@ async function ngaContext(e) {
     }
 
     //先获取NGA链接消息，得到tid
-    let tid = msg.match(/tid\=[0-9]+/);
-    tid = tid[0].substring(4);
-
-    let formData = new URLSearchParams();
-    formData.append('tid', tid)
+    let tid = msg.match(/tid\=[0-9]+/)
+    tid = tid[0].substring(4)
 
     //编一个RSS申请头，POST这个tid，获取所有data
-    let postUrl = `https://ngabbs.com/app_api.php?__lib=post&__act=list`;
-    let postInfo = await fetch(postUrl, {
-        method: "POST",
-        headers: {
-            'X-User-Agent': 'NGA_skull/6.0.5(iPhone10,3;iOS 12.0.1)',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: formData.toString()
-    }).then(res => res.json());
+    let postUrl = `https://ngabbs.com/app_api.php?__lib=post&__act=list`
+    let postInfo = ngaUrlPost(postUrl, tid, 1)
 
     if (postInfo.code !== 0) {
-        e.reply(`未获取到主题内容`);
-        return false;
+        e.reply(`未获取到主题内容`)
+        return false
     }
 
-    let subject = postInfo.tsubject;      //主题
-    let forum_name = postInfo.forum_name;     //版名
-    let authorUID = postInfo.tauthorid;     //作者ID
-    let hotPost = postInfo.hot_post || {};      //热评
-    let replyCount = postInfo.vrows - 1;        //回复数
-    let totalPage = postInfo.totalPage;        //总页数
-    let currentPage = postInfo.currentPage;        //当前页
-    let postResult = postInfo.result;       //回复内容
+    let subject = postInfo.tsubject         //主题
+    let forum_name = postInfo.forum_name     //版名
+    let replyCount = postInfo.vrows - 1        //回复数
+    let totalPage = postInfo.totalPage        //总页数
+    let currentPage = postInfo.currentPage        //当前页
+    let postResult = postInfo.result || {}       //回复内容
 
     //已获得数据，先弹出个回复
-    e.reply(`已获取信息，正在生成图片`);
+    e.reply(`已获取信息，正在生成图片`)
 
     if (totalPage > 3) {
-        e.reply(`楼层过多，生成速度不快，请稍后`);
+        e.reply(`楼层过多，生成速度不快，请稍后`)
     }
+
+    allReply.push(postResult)
+
+    if (totalPage >= currentPage + 1) {
+        postInfo = ngaUrlPost(postUrl, tid, currentPage + 1)
+        postResult = postInfo.result
+        allReply.push(postResult);
+    }
+
+    //取出大于10赞的出来
+    let above10GoodReply = {}
 
     //重组json
     for (let result in postResult) {
-        let tempReplyPage = [];
+        let tempFloorReply = []
 
         if (postResult[result].isTieTiao) {
-            let tieTiao = [];
+            let tieTiao = []
             for (let comment in postResult[result].comments) {
                 tieTiao.push([{
                     userName: postResult[result].comments[comment].author.username,
                     content: postResult[result].comments[comment].content
-                }]);
+                }])
             }
             if (tieTiao.length !== 0) {
                 if (postResult[result].lou === 0) {
-                    titlePage = {...titlePage, ...{tietiao: tieTiao}}
+                    titlePage = { ...titlePage, ...{ tietiao: tieTiao } }
                 } else {
-                    tempReplyPage.push([{tietiao: tieTiao}])
+                    tempFloorReply.push([{ tietiao: tieTiao }])
                 }
             }
         }
@@ -83,6 +83,7 @@ async function ngaContext(e) {
         if (postResult[result].lou === 0) {
             //0楼是楼主
             titlePage = {
+                title: subject,
                 userName: postResult[result].author.username,
                 registrationTime: moment(new Date(postResult[result].author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
                 userMemberGroup: postResult[result].author.member,
@@ -99,12 +100,12 @@ async function ngaContext(e) {
                     hotPostList.push([{
                         userName: postInfo.hot_post[hotPost].author.username,
                         content: postInfo.hot_post[hotPost].content
-                    }]);
+                    }])
                 }
                 titlePage = { ...titlePage, ...{ hotPostList: hotPostList } }
             }
         } else {
-            tempReplyPage.concat([{
+            tempFloorReply = [...tempFloorReply, ...[{
                 userName: postResult[result].author.username,
                 registrationTime: moment(new Date(postResult[result].author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
                 userMemberGroup: postResult[result].author.member,
@@ -115,33 +116,33 @@ async function ngaContext(e) {
                 voteGood: postResult[result].vote_good,
                 voteBad: postResult[result].vote_bad,
                 floor: postResult[result].lou
-            }]);
-            replyPage = {tempReplyPage};
+            }]]
+            replyPage[tempFloorReply[0].floor] = tempFloorReply[0]
         }
     }
     //获取标题和回复数
-    let msgTitle = `NGA消息解析： https://ngabbs.com/read.php?tid=` + tid;
-    let msgReply = `回复数：` + replyCount;
+    let msgTitle = `NGA消息解析 ` + subject;
+    let msgReply = `回复数 ` + replyCount;
+    replyPage = {"reply": replyPage}
 
     //根据回复长度生成多张图片，包括主题和热评回复和贴条
-    let pic = renderCardPic(e, 'reply', replyPage);
-
-    let replypics = [];
-    let newReplyPage = [];
-    for (let pageCount in replyPage) {
-        newReplyPage.push(replyPage[pageCount])
-        if (pageCount > 0 && replyPage[pageCount].floor % 10 === 0) {
-            pic = await renderCard(e, 'reply', newReplyPage);
-            newReplyPage = [];
-            replypics.push(pic);
+    let pic = []
+    let replypics = []
+    replypics.push(await renderCard(e, 'title', titlePage))
+    let newReplyPage = []
+    for (let pageCount in replyPage['reply']) {
+        newReplyPage.push(replyPage['reply'][pageCount])
+        if (pageCount > 0 && replyPage['reply'][pageCount].floor % 10 === 0) {
+            replypics.push(await renderCard(e, 'reply', {"reply": newReplyPage}))
+            newReplyPage = []
         }
     }
 
     if (newReplyPage.length > 0) {
-        pic = await renderCard(e, 'reply', newReplyPage);
-        replypics.push(pic);
+        replypics.push(await renderCard(e, 'reply', {"reply": newReplyPage}))
     }
-    let ngaUrl = `https://ngabbs.com/read.php?tid=`|| tid;
+    let ngaUrl = `` || tid
+    // let ngaUrl = `https://ngabbs.com/read.php?tid=`|| tid
 
     //放在消息合并
     let sendMsg = msgCombine(ngaUrl, msgTitle, msgReply, replypics);
@@ -149,10 +150,10 @@ async function ngaContext(e) {
     Bot.pickGroup(e.group_id)
         .sendMsg(getCombineSendMsg)
         .catch((err) => { // 推送失败，可能仅仅是某个群推送失败
-            Bot.logger.mark(err);
+            Bot.logger.mark(err)
             common.relpyPrivate(botConfig.masterQQ, `${pushID}群推送失败\n` + err + "\n" + msg)
-            pushAgain(pushID, msg);
-        });
+            pushAgain(pushID, msg)
+        })
 }
 
 
@@ -170,7 +171,7 @@ async function renderCard(e, htmlType, data) {
         escape: false,
         scale: 1.6,
         retType: 'base64'
-    });
+    })
 }
 
 async function renderCardPic(e, htmlType, data) {
@@ -185,17 +186,17 @@ async function renderCardPic(e, htmlType, data) {
     await runtimeRender(e, url, data, {
         escape: false,
         scale: 1.6,
-    });
+    })
 }
 
 function msgCombine(ngaUrl, title, reply, pics) {
-    let msg;
-    msg = [title, reply, ngaUrl, pics];
-    return msg;
+    let msg
+    msg = [title, reply, ngaUrl, pics]
+    return msg
 }
 
 function msgAnalyse(e) {
-    ngaContext(e);
+    ngaContext(e)
 }
 
 function updateNgaAnalyse(e) {
@@ -206,7 +207,33 @@ async function ngaAnalyseTest(e) {
     e.msg = '';
     e.message = { data: `` }
     e.raw_message = '[json消息]'
-    ngaContext(e);
+    ngaContext(e)
+}
+
+async function ngaUrlPost(posturl, tid, pageCount) {
+    let formData = new URLSearchParams()
+    formData.append('tid', tid)
+    formData.append('page', pageCount)
+
+    //编一个RSS申请头，POST这个tid，获取所有data
+    let postUrl = `https://ngabbs.com/app_api.php?__lib=post&__act=list`;
+    return postInfo = await fetch(postUrl, {
+        method: "POST",
+        headers: {
+            'X-User-Agent': 'NGA_skull/6.0.5(iPhone10,3;iOS 12.0.1)',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: formData.toString()
+    }).then(res => res.json())
+}
+
+function ngaUrlDecode(content) {
+    let br = <br />;
+    let imgReg = /<img>.*<\/img>/;
+    if (content.contains('<br />')) {
+        content.replace('')
+    }
+
 }
 
 export default {

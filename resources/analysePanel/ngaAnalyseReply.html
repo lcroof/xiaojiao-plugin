@@ -7,7 +7,7 @@
 {{block 'main'}}
 <div class="analyse">
     {{each reply reply}}
-    <div class="container">
+    <div class="containerNga">
         <div class="header">
             <div class="userGroup">
                 <div class="userName">
@@ -27,19 +27,17 @@
                 <div class="postCount">
                     发帖数:{{reply.postCount}}
                 </div>
+                <div class="floor">
+                    楼层:{{reply.floor}}
+                </div>
             </div>
         </div>
         <div class="divider"></div>
-        <div class="content">
-            <div class="postContent">
-                {{reply.postContent}}
-            </div>
-            <div class="floor">
-                楼层:{{reply.floor}}
-            </div>
-            <div class="postTime">
-                {{reply.postTime}}
-            </div>
+        <div class="postContent">
+            {{reply.postContent}}
+        </div>
+        <div class="postTime">
+            {{reply.postTime}}
         </div>
         <div class="divider"></div>
         <div class="footer">
