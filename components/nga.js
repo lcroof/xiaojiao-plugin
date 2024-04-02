@@ -123,7 +123,7 @@ async function ngaContext(e) {
     //获取标题和回复数
     let msgTitle = `NGA消息解析 ` + subject;
     let msgReply = `回复数 ` + replyCount;
-    replyPage = {"reply": replyPage}
+    replyPage = { "reply": replyPage }
 
     //根据回复长度生成多张图片，包括主题和热评回复和贴条
     let pic = []
@@ -133,13 +133,13 @@ async function ngaContext(e) {
     for (let pageCount in replyPage['reply']) {
         newReplyPage.push(replyPage['reply'][pageCount])
         if (pageCount > 0 && replyPage['reply'][pageCount].floor % 10 === 0) {
-            replypics.push(await renderCard(e, 'reply', {"reply": newReplyPage}))
+            replypics.push(await renderCard(e, 'reply', { "reply": newReplyPage }))
             newReplyPage = []
         }
     }
 
     if (newReplyPage.length > 0) {
-        replypics.push(await renderCard(e, 'reply', {"reply": newReplyPage}))
+        replypics.push(await renderCard(e, 'reply', { "reply": newReplyPage }))
     }
     let ngaUrl = `` || tid
     // let ngaUrl = `https://ngabbs.com/read.php?tid=`|| tid
@@ -227,12 +227,46 @@ async function ngaUrlPost(posturl, tid, pageCount) {
     }).then(res => res.json())
 }
 
-function ngaUrlDecode(content) {
-    let br = <br />;
-    let imgReg = /<img>.*<\/img>/;
-    if (content.contains('<br />')) {
-        content.replace('')
+function ngaContentDecode(content) {
+    let br = '<br />'
+    let imgReg = /\[img\].*\[\/img\]/g
+    let emojiReg = /\[s\:.*:.*\]/g
+    let colorReg = /<color.*<\/color>/g
+    if (content.contains(br)) {
+        content.replace(br, '')
     }
+    if (content.match(emojiReg)) {
+        content = ngaEmojiDecode(content.match(emojiReg), content)
+    }
+    if (content.match(imgReg)) {
+        content = imgDecode(content.match(imgReg), content)
+    }
+}
+
+function ngaEmojiDecode(emoji, content) {
+    let matchArray = emoji;
+    matchArray.forEach(e => {
+        let emojiArray = e.split(':')
+        let emojiType = emojiArray[1].toString()
+        let emojiName = emojiArray[2].toString()
+        let path = '../resources/nga/emoji/' + emojiType + '/' + emojiName
+        let replaceString = '<img src =\'' + path + '\'</img>'
+        content.replace(e, replaceString)
+    });
+    return content
+}
+
+function imgDecode(imgContent, content) {
+    let matchArray = imgContent;
+    matchArray.forEach(img => {
+        let imgUrl = img.replace('[img]', '').replace('[\img]', '')
+        let replaceString = '<img src =\'' + imgUrl + '\'</img>'
+        content.replace(e, replaceString)
+    });
+    return content
+}
+
+function colorDecode() {
 
 }
 
