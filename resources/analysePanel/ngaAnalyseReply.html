@@ -6,7 +6,7 @@
 
 {{block 'main'}}
 <div class="analyse">
-    {{each reply reply}}
+    {{each reply reply}}    
     <div class="containerNga">
         <div class="header">
             <div class="userGroup">
@@ -34,7 +34,7 @@
         </div>
         <div class="divider"></div>
         <div class="postContent">
-            {{reply.postContent}}
+            <pre>{{@reply.postContent}}</pre>
         </div>
         <div class="postTime">
             {{reply.postTime}}
@@ -50,6 +50,7 @@
         </div>
         {{if reply.tietiao}}
         <div class="divider"></div>
+        <div>评论</div>
         {{/if}}
         {{each reply.tietiao tietiao}}
         <div class="tietiao">

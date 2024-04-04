@@ -9,6 +9,11 @@
     width: 99%;
 }
 
+.attachimg {
+    max-width: 100%;
+    height: auto;
+}
+
 .dividerEnd {
     border-bottom: 3px solid rgb(255, 255, 255);
     opacity: 1;
@@ -23,11 +28,12 @@
 }
 
 .title {
-    font-size: large;
+    font-size: x-large;
+    font-family: Number, "汉仪文黑-65W", YS, PingFangSC-Medium, "PingFang SC", sans-serif;
 }
 
 .header {
-    font-size: large;
+    font-size: medium;
 }
 
 .header .userGroup {
@@ -45,7 +51,7 @@
     display: flex;
     color: #9499A0;
 	bottom: 0px;
-    right: 10px;
+    right: 0px;
 }
 
 .header .userInfo {
@@ -78,6 +84,12 @@
     min-height: 50px;
 }
 
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: Number, "汉仪文黑-65W", YS, PingFangSC-Medium, "PingFang SC", sans-serif;
+}
+
 .postTime {
     text-align: right;
     transition: opacity 0.3s;
@@ -85,7 +97,6 @@
 }
 
 .footer {
-    font-size: large;
     display: flex;
 }
 
@@ -99,7 +110,7 @@
 }
 
 .hotpost {
-    font-size: large;
+    font-size: medium;
     display: flex;
 }
 
@@ -109,10 +120,11 @@
 
 .hotpost .postContent {
     display: flex;
+    padding: 0px 0px 0px 10px;
 }
 
 .tietiao {
-    font-size: large;
+    font-size: medium;
     display: flex;
 }
 

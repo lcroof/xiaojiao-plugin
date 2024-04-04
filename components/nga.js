@@ -27,7 +27,7 @@ async function ngaContext(e) {
 
     //编一个RSS申请头，POST这个tid，获取所有data
     let postUrl = `https://ngabbs.com/app_api.php?__lib=post&__act=list`
-    let postInfo = ngaUrlPost(postUrl, tid, 1)
+    let postInfo = await ngaUrlPost(postUrl, tid, 1)
 
     if (postInfo.code !== 0) {
         e.reply(`未获取到主题内容`)
@@ -40,6 +40,7 @@ async function ngaContext(e) {
     let totalPage = postInfo.totalPage        //总页数
     let currentPage = postInfo.currentPage        //当前页
     let postResult = postInfo.result || {}       //回复内容
+    let hotPost = postInfo.hot_post || {}       //热评
 
     //已获得数据，先弹出个回复
     e.reply(`已获取信息，正在生成图片`)
@@ -48,74 +49,79 @@ async function ngaContext(e) {
         e.reply(`楼层过多，生成速度不快，请稍后`)
     }
 
-    allReply.push(postResult)
+    postResult.forEach(result => {
+        allReply.push(result)
+    });
 
-    if (totalPage >= currentPage + 1) {
-        postInfo = ngaUrlPost(postUrl, tid, currentPage + 1)
-        postResult = postInfo.result
-        allReply.push(postResult);
+
+    while (totalPage >= currentPage + 1) {
+        postInfo = await ngaUrlPost(postUrl, tid, currentPage + 1)
+        currentPage = postInfo.currentPage
+        postInfo.result.forEach(result => {
+            allReply.push(result)
+        });
     }
 
-    //取出大于10赞的出来
-    let above10GoodReply = {}
-
     //重组json
-    for (let result in postResult) {
+    for (let result in allReply) {
+        if (allReply[result].vote_good < 10 && allReply[result].lou > 0) {
+            continue
+        }
         let tempFloorReply = []
 
-        if (postResult[result].isTieTiao) {
+        if (allReply[result].isTieTiao) {
             let tieTiao = []
-            for (let comment in postResult[result].comments) {
-                tieTiao.push([{
-                    userName: postResult[result].comments[comment].author.username,
-                    content: postResult[result].comments[comment].content
-                }])
+            for (let comment in allReply[result].comments) {
+                tieTiao = [...tieTiao, ...[{
+                    userName: allReply[result].comments[comment].author.username,
+                    content: ngaContentDecode(allReply[result].comments[comment].content)
+                }]]
             }
             if (tieTiao.length !== 0) {
-                if (postResult[result].lou === 0) {
+                if (allReply[result].lou === 0) {
                     titlePage = { ...titlePage, ...{ tietiao: tieTiao } }
                 } else {
-                    tempFloorReply.push([{ tietiao: tieTiao }])
+                    tempFloorReply = [...tempFloorReply, ...[{ tietiao: tieTiao }]]
                 }
             }
         }
 
-        if (postResult[result].lou === 0) {
+        if (allReply[result].lou === 0) {
             //0楼是楼主
-            titlePage = {
+            titlePage = {...titlePage, ...{
                 title: subject,
-                userName: postResult[result].author.username,
-                registrationTime: moment(new Date(postResult[result].author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
-                userMemberGroup: postResult[result].author.member,
-                rvrc: postResult[result].author.rvrc,
-                postCount: postResult[result].author.postnum,
-                postContent: postResult[result].content,
-                postTime: moment(new Date(postResult[result].postdatetimestamp * 1000)).format('YYYY-MM-DD HH:mm:ss'),
-                voteGood: postResult[result].vote_good,
-                voteBad: postResult[result].vote_bad
-            }
-            if (postInfo.hot_post.length > 0) {
+                userName: allReply[result].author.username,
+                registrationTime: moment(new Date(allReply[result].author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
+                userMemberGroup: allReply[result].author.member,
+                rvrc: allReply[result].author.rvrc,
+                postCount: allReply[result].author.postnum,
+                postContent: ngaContentDecode(allReply[result].content),
+                postTime: moment(new Date(allReply[result].postdatetimestamp * 1000)).format('YYYY-MM-DD HH:mm:ss'),
+                voteGood: allReply[result].vote_good,
+                voteBad: allReply[result].vote_bad
+            }}
+            if (hotPost.length > 0) {
                 let hotPostList = [];
-                for (let hotPost in postInfo.hot_post) {
-                    hotPostList.push([{
-                        userName: postInfo.hot_post[hotPost].author.username,
-                        content: postInfo.hot_post[hotPost].content
-                    }])
+                for (let post in hotPost) {
+                    hotPostList = [...hotPostList, ...[{
+                        userName: hotPost[post].author.username,
+                        content: ngaContentDecode(hotPost[post].content)
+                    }]]
                 }
                 titlePage = { ...titlePage, ...{ hotPostList: hotPostList } }
             }
-        } else {
+        } else if (allReply[result].subject !== '对主题发表了一条评论') {
             tempFloorReply = [...tempFloorReply, ...[{
-                userName: postResult[result].author.username,
-                registrationTime: moment(new Date(postResult[result].author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
-                userMemberGroup: postResult[result].author.member,
-                rvrc: postResult[result].author.rvrc,
-                postCount: postResult[result].author.postnum,
-                postContent: postResult[result].content,
-                postTime: moment(new Date(postResult[result].postdatetimestamp * 1000)).format('YYYY-MM-DD HH:mm:ss'),
-                voteGood: postResult[result].vote_good,
-                voteBad: postResult[result].vote_bad,
-                floor: postResult[result].lou
+                userName: allReply[result].author.username,
+                registrationTime: moment(new Date(allReply[result].author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
+                userMemberGroup: allReply[result].author.member,
+                rvrc: allReply[result].author.rvrc,
+                postCount: allReply[result].author.postnum,
+                postContent: ngaContentDecode(allReply[result].content),
+                postTime: moment(new Date(allReply[result].postdatetimestamp * 1000)).format('YYYY-MM-DD HH:mm:ss'),
+                voteGood: allReply[result].vote_good,
+                voteBad: allReply[result].vote_bad,
+                floor: allReply[result].lou
             }]]
             replyPage[tempFloorReply[0].floor] = tempFloorReply[0]
         }
@@ -216,8 +222,7 @@ async function ngaUrlPost(posturl, tid, pageCount) {
     formData.append('page', pageCount)
 
     //编一个RSS申请头，POST这个tid，获取所有data
-    let postUrl = `https://ngabbs.com/app_api.php?__lib=post&__act=list`;
-    return postInfo = await fetch(postUrl, {
+    return await fetch(posturl, {
         method: "POST",
         headers: {
             'X-User-Agent': 'NGA_skull/6.0.5(iPhone10,3;iOS 12.0.1)',
@@ -228,12 +233,14 @@ async function ngaUrlPost(posturl, tid, pageCount) {
 }
 
 function ngaContentDecode(content) {
-    let br = '<br />'
+    content = `${content}`;
+    let brReg = /<br\/>/g
     let imgReg = /\[img\].*\[\/img\]/g
     let emojiReg = /\[s\:.*:.*\]/g
     let colorReg = /<color.*<\/color>/g
-    if (content.contains(br)) {
-        content.replace(br, '')
+    let replyReg = /<b>Reply to.*<\/b>/g
+    if (content.match(brReg)) {
+        content = content.replace(brReg, '\n')
     }
     if (content.match(emojiReg)) {
         content = ngaEmojiDecode(content.match(emojiReg), content)
@@ -241,6 +248,11 @@ function ngaContentDecode(content) {
     if (content.match(imgReg)) {
         content = imgDecode(content.match(imgReg), content)
     }
+    if (content.match(replyReg)) {
+        content = replyDecode(content.match(replyReg), content)
+    }
+
+    return content
 }
 
 function ngaEmojiDecode(emoji, content) {
@@ -249,9 +261,9 @@ function ngaEmojiDecode(emoji, content) {
         let emojiArray = e.split(':')
         let emojiType = emojiArray[1].toString()
         let emojiName = emojiArray[2].toString()
-        let path = '../resources/nga/emoji/' + emojiType + '/' + emojiName
-        let replaceString = '<img src =\'' + path + '\'</img>'
-        content.replace(e, replaceString)
+        let path = '../../../../../plugins/bilibili-plugin/resources/nga/emoji/' + emojiType + '/' + emojiName.replace(']', '') + '.png'
+        let replaceString = '<img src="' + path + '" />'
+        content = content.replace(e, replaceString)
     });
     return content
 }
@@ -259,15 +271,23 @@ function ngaEmojiDecode(emoji, content) {
 function imgDecode(imgContent, content) {
     let matchArray = imgContent;
     matchArray.forEach(img => {
-        let imgUrl = img.replace('[img]', '').replace('[\img]', '')
-        let replaceString = '<img src =\'' + imgUrl + '\'</img>'
-        content.replace(e, replaceString)
+        let imgUrl = img.replace('[img]', '').replace('[/img]', '')
+        let replaceString = '<img src="' + imgUrl + '" class="attachimg" />'
+        content = content.replace(img, replaceString)
     });
     return content
 }
 
 function colorDecode() {
 
+}
+
+function replyDecode(replyContent, content) {
+    let matchArray = replyContent
+    matchArray.forEach(reply => {
+        content = content.replace(reply, '')
+    });
+    return content
 }
 
 export default {

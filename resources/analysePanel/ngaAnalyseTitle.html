@@ -32,13 +32,11 @@
         </div>
     </div>
     <div class="divider"></div>
-    <div class="content">
-        <div class="postContent">
-            {{postContent}}
-        </div>
-        <div class="postTime">
-            {{postTime}}
-        </div>
+    <div class="postContent">
+        <pre>{{@postContent}}</pre>
+    </div>
+    <div class="postTime">
+        {{postTime}}
     </div>
     <div class="divider"></div>
     <div class="footer">
@@ -49,23 +47,31 @@
             {{voteBad}}反对
         </div>
     </div>
+    {{if tietiao}}
+        <div class="divider"></div>
+        <div>贴条</div>
+    {{/if}}
     {{each tietiao tietiao}}
     <div class="tietiao">
         <div class="userName">
             {{tietiao.userName}}
         </div>
         <div class="content">
-            {{tietiao.content}}
+            <pre>{{@tietiao.content}}</pre>
         </div>
     </div>
     {{/each}}
+    {{if tietiao}}
+    <div class="divider"></div>
+        <div>热评</div>
+    {{/if}}
     {{each hotPostList hotpost}}
     <div class="hotpost">
         <div class="userName">
             {{hotpost.userName}}
         </div>
         <div class="postContent">
-            {{hotpost.content}}
+            <pre>{{@hotpost.content}}</pre>
         </div>
     </div>
     {{/each}}
