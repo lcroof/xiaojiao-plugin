@@ -6,8 +6,8 @@
 
 {{block 'main'}}
 <div class="analyse">
-    {{each reply reply}}    
-    <div class="containerNga">
+    {{each reply reply index}}
+    <div class="containerNga {{index % 2 === 0 ? 'nextFloor': ''}}">
         <div class="header">
             <div class="userGroup">
                 <div class="userName">
@@ -58,7 +58,7 @@
                 {{tietiao.userName}}
             </div>
             <div class="content">
-                {{tietiao.content}}
+                <pre>{{@tietiao.content}}</pre>
             </div>
         </div>
         {{/each}}

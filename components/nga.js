@@ -132,15 +132,17 @@ async function ngaContext(e) {
     replyPage = { "reply": replyPage }
 
     //根据回复长度生成多张图片，包括主题和热评回复和贴条
-    let pic = []
+    let splitPageCount = 0
     let replypics = []
     replypics.push(await renderCard(e, 'title', titlePage))
     let newReplyPage = []
     for (let pageCount in replyPage['reply']) {
         newReplyPage.push(replyPage['reply'][pageCount])
-        if (pageCount > 0 && replyPage['reply'][pageCount].floor % 10 === 0) {
+        splitPageCount++
+        if (splitPageCount === 10) {
             replypics.push(await renderCard(e, 'reply', { "reply": newReplyPage }))
             newReplyPage = []
+            splitPageCount = 0
         }
     }
 

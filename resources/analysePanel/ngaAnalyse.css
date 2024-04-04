@@ -3,10 +3,17 @@
 }
 
 .divider {
-    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+    border-bottom: 1px solid rgba(102, 102, 102, 0.203);
     margin-bottom: 10px;
     margin-top: 10px;
     width: 99%;
+}
+
+.containerNga {
+    background-color: rgb(246, 228, 187);
+    &.nextFloor {
+        background-color: rgb(255, 240, 205);
+    }
 }
 
 .attachimg {
@@ -15,16 +22,9 @@
 }
 
 .dividerEnd {
-    border-bottom: 3px solid rgb(255, 255, 255);
+    border-bottom: 1px solid rgb(255, 255, 255);
     opacity: 1;
-    margin-bottom: 10px;
-    margin-top: 10px;
     width: 100%;
-}
-
-.containerNga {
-    padding: 5px 5px 5px 5px;
-    background-color: rgba(241, 182, 45, 0.4);
 }
 
 .title {
@@ -91,12 +91,14 @@ pre {
 }
 
 .postTime {
+    font-size: medium;
     text-align: right;
     transition: opacity 0.3s;
     color: #9499A0;
 }
 
 .footer {
+    font-size: medium;
     display: flex;
 }
 
