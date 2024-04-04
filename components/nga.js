@@ -149,8 +149,8 @@ async function ngaContext(e) {
     if (newReplyPage.length > 0) {
         replypics.push(await renderCard(e, 'reply', { "reply": newReplyPage }))
     }
-    let ngaUrl = `` || tid
-    // let ngaUrl = `https://ngabbs.com/read.php?tid=`|| tid
+    //let ngaUrl = `` || tid
+    let ngaUrl = `https://ngabbs.com/read.php?tid=`|| tid
 
     //放在消息合并
     let sendMsg = msgCombine(ngaUrl, msgTitle, msgReply, replypics);
