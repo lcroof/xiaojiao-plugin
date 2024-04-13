@@ -245,7 +245,7 @@ function ngaContentDecode(content) {
     let imgReg = /\[img\].*\[\/img\]/g
     let emojiReg = /\[s\:.*:.*\]/g
     let replyReg = /<b>Reply to.*<\/b>/g
-    let quoteReg = /\[quote\].*\[\/quote\]/g    
+    let quoteReg = /\[quote\].*\[\/quote\]/g
     if (content.match(emojiReg)) {
         content = ngaEmojiDecode(content.match(emojiReg), content)
     }
@@ -266,7 +266,7 @@ function ngaContentDecode(content) {
 }
 
 function ngaEmojiDecode(emoji, content) {
-    let matchArray = String(emoji).replace(']', '],').split(',');
+    let matchArray = String(emoji).replace(/\]/g, '],').split(',');
     matchArray.forEach(e => {
         if (e !== '') {
             let emojiArray = e.split(':')
@@ -281,20 +281,26 @@ function ngaEmojiDecode(emoji, content) {
 }
 
 function imgDecode(imgContent, content) {
-    let matchArray = imgContent;
+    let matchArray = String(imgContent).replace(/\[\/img\]/g, '[/img],').split(',');
     matchArray.forEach(img => {
-        let imgUrl = img.replace('[img]', '').replace('[/img]', '')
-        let replaceString = '<img src="' + imgUrl + '" class="attachimg" />'
-        content = content.replace(img, replaceString)
+        if (img !== '') {
+            let imgUrl = img.replace('[img]', '').replace('[/img]', '')
+            let replaceString = '<img src="' + imgUrl + '" class="attachimg" />'
+            content = content.replace(img, replaceString)
+        }
     });
     return content
 }
 
 function quoteDecode(quoteContent, content) {
-    let matchArray = quoteContent
+    let matchArray = String(quoteContent).replace(/\[\/quote\]/g, '[/quote],').split(',');
     matchArray.forEach(quote => {
         let actualQuoteContent = quote.replace('[quote]', '').replace('[/quote]', '').replace(/\[pid.*\[\/pid\]/g, '')
+        let topicQuote = /\[tid.*\[\/tid\]/g
         let replaceString = '<div class="quote"><pre>' + actualQuoteContent + '</pre></div> \n'
+        if (actualQuoteContent.match(topicQuote)) {
+            replaceString = '<div class="quote"><pre>' + 'Topic Reply' + '</pre></div> \n'
+        }
         content = content.replace(quote, replaceString)
     });
     return content
