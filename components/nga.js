@@ -88,18 +88,20 @@ async function ngaContext(e) {
 
         if (allReply[result].lou === 0) {
             //0楼是楼主
-            titlePage = {...titlePage, ...{
-                title: subject,
-                userName: allReply[result].author.username,
-                registrationTime: moment(new Date(allReply[result].author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
-                userMemberGroup: allReply[result].author.member,
-                rvrc: allReply[result].author.rvrc,
-                postCount: allReply[result].author.postnum,
-                postContent: ngaContentDecode(allReply[result].content),
-                postTime: moment(new Date(allReply[result].postdatetimestamp * 1000)).format('YYYY-MM-DD HH:mm:ss'),
-                voteGood: allReply[result].vote_good,
-                voteBad: allReply[result].vote_bad
-            }}
+            titlePage = {
+                ...titlePage, ...{
+                    title: subject,
+                    userName: allReply[result].author.username,
+                    registrationTime: moment(new Date(allReply[result].author.regdate * 1000)).format('YYYY-MM-DD HH:mm:ss'),
+                    userMemberGroup: allReply[result].author.member,
+                    rvrc: allReply[result].author.rvrc,
+                    postCount: allReply[result].author.postnum,
+                    postContent: ngaContentDecode(allReply[result].content),
+                    postTime: moment(new Date(allReply[result].postdatetimestamp * 1000)).format('YYYY-MM-DD HH:mm:ss'),
+                    voteGood: allReply[result].vote_good,
+                    voteBad: allReply[result].vote_bad
+                }
+            }
             if (hotPost.length > 0) {
                 let hotPostList = [];
                 for (let post in hotPost) {
@@ -149,8 +151,11 @@ async function ngaContext(e) {
     if (newReplyPage.length > 0) {
         replypics.push(await renderCard(e, 'reply', { "reply": newReplyPage }))
     }
-    //let ngaUrl = `` || tid
-    let ngaUrl = 'https://ngabbs.com/read.php?tid=' + tid
+
+    let ngaUrl = `` || tid
+    if (!process.argv.includes('dev')) {
+        ngaUrl = 'https://ngabbs.com/read.php?tid=' + tid
+    }
 
     //放在消息合并
     let sendMsg = msgCombine(ngaUrl, msgTitle, msgReply, replypics);
@@ -239,11 +244,8 @@ function ngaContentDecode(content) {
     let brReg = /<br\/>/g
     let imgReg = /\[img\].*\[\/img\]/g
     let emojiReg = /\[s\:.*:.*\]/g
-    let colorReg = /<color.*<\/color>/g
     let replyReg = /<b>Reply to.*<\/b>/g
-    if (content.match(brReg)) {
-        content = content.replace(brReg, '\n')
-    }
+    let quoteReg = /\[quote\].*\[\/quote\]/g    
     if (content.match(emojiReg)) {
         content = ngaEmojiDecode(content.match(emojiReg), content)
     }
@@ -253,19 +255,27 @@ function ngaContentDecode(content) {
     if (content.match(replyReg)) {
         content = replyDecode(content.match(replyReg), content)
     }
+    if (content.match(quoteReg)) {
+        content = quoteDecode(content.match(quoteReg), content)
+    }
+    if (content.match(brReg)) {
+        content = content.replace(brReg, '\n')
+    }
 
     return content
 }
 
 function ngaEmojiDecode(emoji, content) {
-    let matchArray = emoji;
+    let matchArray = String(emoji).replace(']', '],').split(',');
     matchArray.forEach(e => {
-        let emojiArray = e.split(':')
-        let emojiType = emojiArray[1].toString()
-        let emojiName = emojiArray[2].toString()
-        let path = '../../../../../plugins/bilibili-plugin/resources/nga/emoji/' + emojiType + '/' + emojiName.replace(']', '') + '.png'
-        let replaceString = '<img src="' + path + '" />'
-        content = content.replace(e, replaceString)
+        if (e !== '') {
+            let emojiArray = e.split(':')
+            let emojiType = emojiArray[1].toString()
+            let emojiName = emojiArray[2].toString()
+            let path = '../../../../../plugins/bilibili-plugin/resources/nga/emoji/' + emojiType.replace('[', '') + '/' + emojiName.replace(']', '') + '.png'
+            let replaceString = '<img src="' + path + '" />'
+            content = content.replace(e, replaceString)
+        }
     });
     return content
 }
@@ -280,8 +290,14 @@ function imgDecode(imgContent, content) {
     return content
 }
 
-function colorDecode() {
-
+function quoteDecode(quoteContent, content) {
+    let matchArray = quoteContent
+    matchArray.forEach(quote => {
+        let actualQuoteContent = quote.replace('[quote]', '').replace('[/quote]', '').replace(/\[pid.*\[\/pid\]/g, '')
+        let replaceString = '<div class="quote"><pre>' + actualQuoteContent + '</pre></div> \n'
+        content = content.replace(quote, replaceString)
+    });
+    return content
 }
 
 function replyDecode(replyContent, content) {

@@ -24,7 +24,7 @@ export class MessageAnalyse extends plugin {
                     fnc: 'biliMsgAnalyse'
                 },
                 {
-                    reg: `(https://ngabbs).*tid\=[0-9]+`,
+                    reg: `(https://nga|https://bbs.nga).*tid\=[0-9]+`,
                     fnc: 'ngaMsgAnalyse'
                 },
                 {

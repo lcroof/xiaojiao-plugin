@@ -27,6 +27,11 @@
     width: 100%;
 }
 
+.quote {
+    background-color: rgba(149, 146, 146, 0.516);
+    width: 90%;
+}
+
 .title {
     font-size: x-large;
     font-family: Number, "汉仪文黑-65W", YS, PingFangSC-Medium, "PingFang SC", sans-serif;
