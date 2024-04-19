@@ -246,17 +246,17 @@ function ngaContentDecode(content) {
     let emojiReg = /\[s\:.*:.*\]/g
     let replyReg = /<b>Reply to.*<\/b>/g
     let quoteReg = /\[quote\].*\[\/quote\]/g
-    if (content.match(emojiReg)) {
-        content = ngaEmojiDecode(content.match(emojiReg), content)
-    }
-    if (content.match(imgReg)) {
-        content = imgDecode(content.match(imgReg), content)
-    }
     if (content.match(replyReg)) {
         content = replyDecode(content.match(replyReg), content)
     }
     if (content.match(quoteReg)) {
         content = quoteDecode(content.match(quoteReg), content)
+    }
+    if (content.match(imgReg)) {
+        content = imgDecode(content.match(imgReg), content)
+    }
+    if (content.match(emojiReg)) {
+        content = ngaEmojiDecode(content.match(emojiReg), content)
     }
     if (content.match(brReg)) {
         content = content.replace(brReg, '\n')
@@ -270,7 +270,11 @@ function ngaEmojiDecode(emoji, content) {
     matchArray.forEach(e => {
         if (e !== '') {
             let emojiArray = e.split(':')
-            let emojiType = emojiArray[1].toString()
+            if (emojiArray[1] === undefined) {
+                Bot.logger.mark(e)
+                Bot.logger.mark(content)
+            }
+            let emojiType = emojiArray[1].toString()            
             let emojiName = emojiArray[2].toString()
             let path = '../../../../../plugins/bilibili-plugin/resources/nga/emoji/' + emojiType.replace('[', '') + '/' + emojiName.replace(']', '') + '.png'
             let replaceString = '<img src="' + path + '" />'
@@ -293,7 +297,7 @@ function imgDecode(imgContent, content) {
 }
 
 function quoteDecode(quoteContent, content) {
-    let matchArray = String(quoteContent).replace(/\[\/quote\]/g, '[/quote],').split(',');
+    let matchArray = String(quoteContent).replace(/\[\/quote\]/g, '[/quote];').split(';');
     matchArray.forEach(quote => {
         let actualQuoteContent = quote.replace('[quote]', '').replace('[/quote]', '').replace(/\[pid.*\[\/pid\]/g, '')
         let topicQuote = /\[tid.*\[\/tid\]/g
