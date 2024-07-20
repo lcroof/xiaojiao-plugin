@@ -1,8 +1,8 @@
 {
-  "name": "bilibili-plugin",
+  "name": "xiaojiao-plugin",
   "version": "1.0.0",
   "author": "lcroof",
-  "description": "bilibili-plugin",
+  "description": "xiaojiao-plugin",
   "type": "module",
   "scripts": {
   },

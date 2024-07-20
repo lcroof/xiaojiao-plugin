@@ -11,12 +11,12 @@ if (!global.core) {
   } catch (err) {}
 }
 
-const files = fs.readdirSync('./plugins/bilibili-plugin/apps').filter(file => file.endsWith('.js'))
+const files = fs.readdirSync('./plugins/xiaojiao-plugin/apps').filter(file => file.endsWith('.js'))
 
 let ret = []
 
-logger.info('bilibili-plugin载入成功!')
-logger.info('仓库地址 https://gitee.com/lcroof/bilibili-plugin')
+logger.info('xiaojiao-plugin载入成功!')
+logger.info('仓库地址 https://gitee.com/lcroof/xiaojiao-plugin')
 logger.info('Created By 欧阳青瓜')
 logger.info('-------------------')
 

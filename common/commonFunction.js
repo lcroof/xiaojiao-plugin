@@ -10,9 +10,11 @@ if (isV3) {
     const YAML = await import("yaml");
 
     let configUrl = `${_path}/config/config`;
-    let qq = YAML.parse(fs.readFileSync(`${configUrl}/qq.yaml`, "utf8"));
+    
     let other = YAML.parse(fs.readFileSync(`${configUrl}//other.yaml`, "utf8"));
     let group = YAML.parse(fs.readFileSync(`${configUrl}//group.yaml`, "utf8"));
+    let qq = []
+    qq.push(other.master[0].split(':').shift())
 
     config = { qq, other, group, masterQQ: other.masterQQ, account: qq };
 } else {

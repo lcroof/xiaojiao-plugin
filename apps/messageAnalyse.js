@@ -20,7 +20,7 @@ export class MessageAnalyse extends plugin {
                     fnc: 'updateNgaAnalyse'
                 },
                 {
-                    reg: `.*(b23.tv.*\\/[A-Za-z0-9]+|bilibili.com\/.*\/[A-Za-z0-9]+).*$`,
+                    reg: /.*(b23.tv.*\\\/[A-Za-z0-9]+|bilibili.com\/.*\/[A-Za-z0-9]+).*$/gm,
                     fnc: 'biliMsgAnalyse'
                 },
                 {

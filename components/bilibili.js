@@ -408,15 +408,18 @@ async function biliAnalyse(e) {
   let msg = e.msg
   let urllist = ['b23.tv', 'm.bilibili.com', 'www.bilibili.com']
   let reg2 = new RegExp(`${urllist[0]}|${urllist[1]}|${urllist[2]}`)
-  if (!msg && e.raw_message != '[json消息]' && e.raw_message != '[xml消息]') {
+
+  let msgType = e.message[0].type;
+
+  if (!msg && msgType != 'json' && msgType != 'xml') {
     return false
   }
 
-  if (e.raw_message == '[json消息]') {
+  if (msgType == 'json') {
     let json = JSON.parse(e.message[0].data)
     msg = json.meta.detail_1?.qqdocurl || json.meta.news?.jumpUrl
   }
-  if (e.raw_message == '[xml消息]') {
+  if (msgType == 'xml') {
     logger.warn(msg.toString())
   }
   if (!msg.match(reg2)) {

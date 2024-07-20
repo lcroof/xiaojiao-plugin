@@ -4,7 +4,7 @@ import { Data } from './index.js'
 
 let HelpTheme = {
   async getThemeCfg (theme, exclude) {
-    let dirPath = './plugins/bilibili-plugin/resources/help/theme/'
+    let dirPath = './plugins/xiaojiao-plugin/resources/help/theme/'
     let ret = []
     let names = []
     let dirs = fs.readdirSync(dirPath)

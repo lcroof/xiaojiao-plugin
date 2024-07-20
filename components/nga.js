@@ -276,7 +276,7 @@ function ngaEmojiDecode(emoji, content) {
             }
             let emojiType = emojiArray[1].toString()            
             let emojiName = emojiArray[2].toString()
-            let path = '../../../../../plugins/bilibili-plugin/resources/nga/emoji/' + emojiType.replace('[', '') + '/' + emojiName.replace(']', '') + '.png'
+            let path = '../../../../../plugins/xiaojiao-plugin/resources/nga/emoji/' + emojiType.replace('[', '') + '/' + emojiName.replace(']', '') + '.png'
             let replaceString = '<img src="' + path + '" />'
             content = content.replace(e, replaceString)
         }

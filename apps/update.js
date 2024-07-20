@@ -8,7 +8,7 @@ import { rulePrefix } from '../utils/common.js'
 const _path = process.cwd()
 const require = createRequire(import.meta.url)
 const { exec, execSync } = require('child_process')
-const resPath = `${_path}/plugins/bilibili-plugin/resources/`
+const resPath = `${_path}/plugins/xiaojiao-plugin/resources/`
 
 const checkAuth = async function (e) {
   if (!e.isMaster) {
@@ -74,7 +74,7 @@ export class Update extends plugin {
    * @returns
    */
   async runUpdate (isForce) {
-    const _path = './plugins/bilibili-plugin/'
+    const _path = './plugins/xiaojiao-plugin/'
     let command = `git -C ${_path} pull --no-rebase`
     if (isForce) {
       command = `git -C ${_path} fetch --all && git -C ${_path} reset --hard HEAD`
@@ -83,26 +83,26 @@ export class Update extends plugin {
       this.e.reply('正在执行更新操作，请稍等')
     }
     /** 获取上次提交的commitId，用于获取日志时判断新增的更新日志 */
-    this.oldCommitId = await this.getcommitId('bilibili-plugin')
+    this.oldCommitId = await this.getcommitId('xiaojiao-plugin')
     updateing = true
     let ret = await this.execSync(command)
     updateing = false
 
     if (ret.error) {
-      logger.mark(`${this.e.logFnc} 更新失败：bilibili-plugin`)
+      logger.mark(`${this.e.logFnc} 更新失败：xiaojiao-plugin`)
       this.gitErr(ret.error, ret.stdout)
       return false
     }
 
     /** 获取插件提交的最新时间 */
-    let time = await this.getTime('bilibili-plugin')
+    let time = await this.getTime('xiaojiao-plugin')
 
     if (/(Already up[ -]to[ -]date|已经是最新的)/.test(ret.stdout)) {
-      await this.reply(`bilibili-plugin已经是最新版本\n最后更新时间：${time}`)
+      await this.reply(`xiaojiao-plugin已经是最新版本\n最后更新时间：${time}`)
     } else {
-      await this.reply(`bilibili-plugin\n最后更新时间：${time}`)
+      await this.reply(`xiaojiao-plugin\n最后更新时间：${time}`)
       this.isUp = true
-      let log = await this.getLog('bilibili-plugin')
+      let log = await this.getLog('xiaojiao-plugin')
       await this.reply(log)
     }
 
@@ -144,7 +144,7 @@ export class Update extends plugin {
 
     if (log.length <= 0) return ''
 
-    log = await common.makeForwardMsg(this.e, log, `bilibili-plugin更新日志，共${line}条`)
+    log = await common.makeForwardMsg(this.e, log, `xiaojiao-plugin更新日志，共${line}条`)
 
     return log
   }

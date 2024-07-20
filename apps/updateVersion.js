@@ -5,8 +5,8 @@ import { execSync } from "child_process";
 export class UpdateVersion extends plugin {
   constructor (e) {
     super({
-      name: 'bilibili-Plugin更新日志',
-      dsc: 'bilibili-Plugin更新日志',
+      name: 'xiaojiao-plugin更新日志',
+      dsc: 'xiaojiao-plugin更新日志',
       event: 'message',
       priority: 400,
       rule: [
@@ -31,7 +31,7 @@ export class UpdateVersion extends plugin {
      * @param {string} plugin 插件名称
      * @returns
      */
-  async getLog (plugin = 'bilibili-plugin') {
+  async getLog (plugin = 'xiaojiao-plugin') {
     let cm = 'git log  -20 --oneline --pretty=format:"%h||[%cd]  %s" --date=format:"%m-%d %H:%M"'
     if (plugin) {
       cm = `cd ./plugins/${plugin}/ && ${cm}`

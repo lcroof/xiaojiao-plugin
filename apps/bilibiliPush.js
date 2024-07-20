@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { rulePrefix } from '../utils/common.js'
 import bili from "../components/bilibili.js"
 import biliPush from '../components/biliPush.js'
