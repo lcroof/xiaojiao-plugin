@@ -250,6 +250,7 @@ export async function setBiliPushCookie(e) {
   if (!e.isMaster) {
     return false;
   }
+  let ck = e.msg.split(' ')[1];
   common.saveData("BilibiliCookies", e.msg, "yaml");
 
   return true;
