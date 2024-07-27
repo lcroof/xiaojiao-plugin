@@ -461,7 +461,7 @@ async function pushAgain(groupId, msg) {
  */
 function buildBiliPushSendDynamic(biliUser, dynamic, info) {
   let desc, msg, pics;
-  let title = `B站【${biliUser.name}】动态推送：\n`;
+  let title = `B站【${biliUser.name}】动态推送：`;
 
   // 以下对象结构参考米游社接口，接口在顶部定义了
   switch (dynamic.type) {
@@ -469,7 +469,7 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
       desc = dynamic?.modules?.module_dynamic?.major?.archive;
       if (!desc) return;
 
-      title = `B站【${biliUser.name}】视频动态推送：\n`;
+      title = `B站【${biliUser.name}】视频动态推送：`;
       // 视频动态仅由标题、封面、链接组成
       msg = [title, desc.title, segment.image(desc.cover), resetLinkUrl(desc.jump_url)];
 
@@ -478,11 +478,11 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
       desc = dynamic?.modules?.module_dynamic?.desc;
       if (!desc) return;
 
-      title = `B站【${biliUser.name}】动态推送：\n`;
+      title = `B站【${biliUser.name}】动态推送：`;
       if (getSendType(info) != "default") {
-        msg = [title, `${desc.text}\n`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+        msg = [title, `${desc.text}`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
       } else {
-        msg = [title, `${dynamicContentLimit(desc.text)}\n`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+        msg = [title, `${dynamicContentLimit(desc.text)}`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
       }
 
       return msg;
@@ -495,14 +495,14 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
         return segment.image(item.src);
       });
 
-      title = `B站【${biliUser.name}】图文动态推送：\n`;
+      title = `B站【${biliUser.name}】图文动态推送：`;
 
       if (getSendType(info) != "default") {
-        msg = [title, `${desc.text}\n`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+        msg = [title, `${desc.text}`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
       } else {
         if (pics.length > DynamicPicCountLimit) pics.length = DynamicPicCountLimit; // 最多发DynamicPicCountLimit张图，不然要霸屏了
         // 图文动态由内容（经过删减避免过长）、图片、链接组成
-        msg = [title, `${dynamicContentLimit(desc.text)}\n`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+        msg = [title, `${dynamicContentLimit(desc.text)}`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
       }
 
       return msg;
@@ -517,7 +517,7 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
         });
       }
 
-      title = `B站【${biliUser.name}】文章动态推送：\n`;
+      title = `B站【${biliUser.name}】文章动态推送：`;
       // 专栏/文章动态由标题、图片、链接组成
       msg = [title, desc.title, ...pics, resetLinkUrl(desc.jump_url)];
 
@@ -539,19 +539,19 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
         return false;
       }
 
-      title = `B站【${biliUser.name}】转发动态推送：\n`;
+      title = `B站【${biliUser.name}】转发动态推送：`;
 
       if (getSendType(info) != "default") {
         msg = [
           title,
-          `${desc.text}\n---以下为转发内容---\n`,
+          `${desc.text}\n---以下为转发内容---`,
           ...orig,
           `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`,
         ];
       } else {
         msg = [
           title,
-          `${dynamicContentLimit(desc.text, 1, 15)}\n---以下为转发内容---\n`,
+          `${dynamicContentLimit(desc.text, 1, 15)}\n---以下为转发内容---`,
           ...orig,
           `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`,
         ];
@@ -566,9 +566,9 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
       desc = desc?.live_play_info;
       if (!desc) return;
 
-      title = `B站【${biliUser.name}】直播动态推送：\n`;
+      title = `B站【${biliUser.name}】直播动态推送：`;
       // 直播动态由标题、封面、链接组成
-      msg = [title, `${desc.title}\n`, segment.image(desc.cover), resetLinkUrl(desc.link)];
+      msg = [title, `${desc.title}`, segment.image(desc.cover), resetLinkUrl(desc.link)];
 
       return msg;
     default:
