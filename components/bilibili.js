@@ -271,7 +271,7 @@ export async function setBiliPushTimeInterval(e) {
   }
 
   BilibiliPushConfig.dynamicPushTimeInterval = time;
-  await common.savePushJson(BilibiliPushConfig);
+  await common.saveConfigJson(BilibiliPushConfig);
   e.reply(`设置间隔时间 ${time}分钟 成功，重启后生效~\n请手动重启或者跟我说#重启`);
 
   return true;
@@ -292,7 +292,7 @@ export async function setBiliPushFaultTime(e) {
   }
 
   BilibiliPushConfig.dynamicPushFaultTime = time;
-  await common.savePushJson(BilibiliPushConfig);
+  await common.saveConfigJson(BilibiliPushConfig);
   e.reply(`设置过期时间 ${time}小时 成功，重启后生效\n请手动重启或者跟我说#重启`);
 
   return true;
@@ -348,6 +348,8 @@ export async function setBiliPushSendType(e) {
   } else {
     return false;
   }
+
+  initBiliPushJson();
   let info = PushBilibiliDynamic[pushID];
   if (!info) {
     e.reply("你还妹在这里开启过B站动态推送呢");
@@ -370,7 +372,7 @@ export async function setBiliPushSendType(e) {
   if (e.msg.indexOf("全局") > -1) {
     BilibiliPushConfig.sendType = typeCode;
     type = "全局" + type;
-    await common.savePushJson(BilibiliPushConfig);
+    await common.saveConfigJson(BilibiliPushConfig);
   } else {
     PushBilibiliDynamic[pushID].sendType = typeCode;
     await common.savePushJson(PushBilibiliDynamic);
