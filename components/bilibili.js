@@ -3,7 +3,7 @@ import fetch from "node-fetch";
 import common from "../common/commonFunction.js";
 import runtimeRender from '../common/runtimeRender.js'
 import moment from "moment";
-import push from '../components/biliPush.js'
+import biliPush from '../components/biliPush.js'
 
 const _path = process.cwd();
 const filePath = `${_path}/data/PushNews/`
@@ -52,7 +52,7 @@ async function initBiliPushJson() {
     }
 
   } else {
-    common.savePushJson(BilibiliPushConfig);
+    common.saveConfigJson(BilibiliPushConfig);
   }
 }
 
@@ -172,10 +172,10 @@ export async function changeGroupBilibiliPush(e) {
  */
 export async function updateBilibiliPush(e) {
   if (new RegExp(/(订阅|增加|新增)/).test(e.msg)) {
-    push.createBiliPush(e);
+    biliPush.createBiliPush(e);
   }
   if (new RegExp(/(移除|去除|取消)/).test(e.msg)) {
-    push.deleteBiliPush(e);
+    biliPush.deleteBiliPush(e);
   }
   return true;
 }
@@ -234,12 +234,12 @@ export async function getBilibiliPushUserList(e) {
   }
 
   let push = PushBilibiliDynamic[pushID];
-  let info = push.biliUserList
+  let info = biliPush.biliUserList
     .map((item) => {
       return `${item.name}：${item.uid}`;
     })
     .join("\n");
-  let status = push.isNewsPush ? "开启" : "关闭";
+  let status = biliPush.isNewsPush ? "开启" : "关闭";
 
   e.reply(`当前B站推送是【${status}】状态哦\n推送的B站用户有：\n${info}`);
 

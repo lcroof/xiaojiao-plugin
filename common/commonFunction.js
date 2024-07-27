@@ -327,8 +327,8 @@ function functionAllow(e) {
 
 async function bilibiliUrlPost(url) {
     let BilibiliCookies;
-    if (common.readData("BilibiliCookies", "yaml") !== "") {
-        BilibiliCookies = common.readData("BilibiliCookies", "yaml");
+    if (readData("BilibiliCookies", "yaml") !== "") {
+        BilibiliCookies = readData("BilibiliCookies", "yaml");
     }
 
     if (BilibiliCookies === "") {

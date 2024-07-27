@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import bilibili from './components/bilibili.js'
+import bilibili from './components/biliPush.js'
 
 if (!global.segment) {
   global.segment = (await import("oicq")).segment
@@ -39,5 +39,5 @@ for (let i in files) {
 }
 
 bilibili.initBiliPushJson(); // 初始化
-//bilibili.task();//执行
+bilibili.task();//执行
 export { apps }

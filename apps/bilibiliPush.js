@@ -19,7 +19,7 @@ export class BilibiliPush extends plugin {
           fnc: 'getBiliPushUserList'
         },
         {
-          reg: `^${rulePrefix}(开启|关闭|允许|禁止)群推送\\s*.*$`,
+          reg: `^#(开启|关闭|允许|禁止)群B站推送\\s*.*$`,
           fnc: 'changeGroupBiliPush'
         },
         {

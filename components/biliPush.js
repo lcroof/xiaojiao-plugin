@@ -2,6 +2,14 @@ import common from "../common/commonFunction.js";
 import { botConfig } from "../common/commonFunction.js"
 import schedule from "node-schedule";
 import { segment } from "oicq";
+import fs from "fs";
+
+const _path = process.cwd();
+const filePath = `${_path}/data/PushNews/`
+
+if (!fs.existsSync(filePath)) {
+  fs.mkdirSync(filePath);
+}
 
 let BilibiliPushConfig = {}; // 推送配置
 let PushBilibiliDynamic = {}; // 推送对象列表
@@ -27,7 +35,7 @@ let DynamicPushTimeInterval = 60 * 60 * 1000; // 过期时间，单位：小时�
 /**
  * 初始化获取B站推送信息
  */
-async function initBiliPushJson() {
+function initBiliPushJson() {
   if (fs.existsSync(filePath + "PushBilibiliDynamic.json")) {
     PushBilibiliDynamic = common.readData("PushBilibiliDynamic", "json");
   } else {
@@ -55,7 +63,7 @@ async function initBiliPushJson() {
     }
 
   } else {
-    common.savePushJson(BilibiliPushConfig);
+    common.saveConfigJson(BilibiliPushConfig);
   }
 }
 
@@ -136,6 +144,8 @@ export async function createBiliPush(e) {
     return false;
   }
 
+  initBiliPushJson();
+
   // 推送对象记录
   let pushID = "";
   if (e.isGroup) {
@@ -148,7 +158,7 @@ export async function createBiliPush(e) {
   let temp = PushBilibiliDynamic[pushID];
 
   let msgList = e.msg.split("推送");
-  const addComms = ["订阅", "添加", "新增", "增加", "#订阅", "#添加", "#新增", "#增加"];
+  const addComms = ["B站订阅", "B站添加", "B站新增", "B站增加", "#B站订阅", "#B站添加", "#B站新增", "#B站增加"];
 
   let uid = msgList[1].trim();
   let operComm = msgList[0];
@@ -170,9 +180,9 @@ export async function createBiliPush(e) {
     let url = `${BiliDynamicApiUrl}?host_mid=${uid}`;
     let res = await common.bilibiliUrlPost(url);
 
-    if (res) {
-      return true;
-    }
+    // if (res) {
+    //   return true;
+    // }
 
     if (res.code != 0) {
       e.reply("UID信息无返回，请检查UID是否正确");
@@ -261,7 +271,7 @@ export async function pushScheduleJob(e = {}) {
   dynamicPushHistory = [...hisArray]; // 重新赋值，这个时候dynamicPushHistory就是完整的历史推送了。
   await redis.set("bilipush:history", JSON.stringify(dynamicPushHistory), { EX: 24 * 60 * 60 }); // 仅存储一次，过期时间24小时
 
-  nowDynamicPushList = new Set();
+  nowDynamicPushList = new Map();
 
   let temp = PushBilibiliDynamic;
   nowPushDate = Date.now();
@@ -302,7 +312,7 @@ async function pushDynamic(pushInfo) {
     let biliUID = users[i].uid;
 
     // 请求这个B站用户动态
-    let pushList = getNeedPushList(biliUID);
+    let pushList = await getNeedPushList(biliUID);
 
     // 刚刚请求过了，不再请求
     if (pushList) {
@@ -331,9 +341,9 @@ async function getNeedPushList(uid) {
   let url = `${BiliDynamicApiUrl}?host_mid=${uid}`;
   let res = await common.bilibiliUrlPost(url);
 
-  if (res) {
-    return false;
-  }
+  // if (res) {
+  //   return false;
+  // }
 
   if (res.code != 0) {
     // 请求失败，不记录，跳过，下一个
@@ -347,6 +357,8 @@ async function getNeedPushList(uid) {
     await common.sleep(BiliApiRequestTimeInterval);
     return false;
   }
+
+  let pushList = new Set()
 
   // 获取可以推送的动态列表
   for (let val of data) {
@@ -369,6 +381,8 @@ async function getNeedPushList(uid) {
     await common.sleep(BiliApiRequestTimeInterval);
     return false;
   }
+
+  return pushList
 }
 
 /**
@@ -618,5 +632,7 @@ function getSendType(info) {
 export default {
   initBiliPushJson,
   task,
-  pushScheduleJob
+  pushScheduleJob,
+  createBiliPush,
+  deleteBiliPush
 };
