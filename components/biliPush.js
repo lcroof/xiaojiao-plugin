@@ -43,7 +43,7 @@ function initBiliPushJson() {
   }
 
   if (fs.existsSync(filePath + "BilibiliPushConfig.json")) {
-    BilibiliPushConfig = common.readData(filePath, "json");
+    BilibiliPushConfig = common.readData("BilibiliPushConfig", "json");
 
     // 如果设置了过期时间
     let faultTime = Number(BilibiliPushConfig.dynamicPushFaultTime);
@@ -250,7 +250,7 @@ export async function pushScheduleJob(e = {}) {
   }
 
   // 推送之前先初始化，拿到历史推送，但不能频繁去拿，为空的时候肯定要尝试去拿
-  if (dynamicPushHistory.length === 0) {
+  if (dynamicPushHistory.length === 0 || dynamicPushHistory[0]) {
     let temp = await redis.get("bilipush:history");
     if (!temp) {
       dynamicPushHistory = [];
@@ -263,9 +263,11 @@ export async function pushScheduleJob(e = {}) {
 
   // 将上一次推送的动态全部合并到历史记录中
   let hisArray = new Set(dynamicPushHistory);
-  for (let pushList of nowDynamicPushList) {
-    for (let msg of pushList) {
-      hisArray.add(msg.id_str);
+  for (let [userId, pushList] of nowDynamicPushList) {
+    if (pushList) {
+      for (let msg of pushList) {
+        hisArray.add(msg.id_str);
+      }
     }
   }
   dynamicPushHistory = [...hisArray]; // 重新赋值，这个时候dynamicPushHistory就是完整的历史推送了。
@@ -311,19 +313,31 @@ async function pushDynamic(pushInfo) {
   for (let i = 0; i < users.length; i++) {
     let biliUID = users[i].uid;
 
+    let lastPushList = nowDynamicPushList.get(biliUID);
+
+    // 刚刚请求过了，不再请求
+    if (lastPushList) {
+      // 刚刚请求时候就没有可以推送的内容，跳过
+      if (lastPushList.length === 0) {
+        continue;
+      }
+      await sendDynamic(pushInfo, users[i], lastPushList);
+      continue;
+    }
+
     // 请求这个B站用户动态
     let pushList = await getNeedPushList(biliUID);
 
-    // 刚刚请求过了，不再请求
     if (pushList) {
-      // 刚刚请求时候就没有可以推送的内容，跳过
+      // 没有可以推送的，记录完就跳过，下一个
       if (pushList.length === 0) {
+        await common.sleep(BiliApiRequestTimeInterval);
         continue;
       }
-      await sendDynamic(pushInfo, users[i], pushList);
-      continue;
+      // 数据去重，确保不会重复推送
+      pushList = rmDuplicatePushList([...pushList]);
+      await sendDynamic(pushInfo, users[i], pushList);      
     }
-    //保存已推送记录
     if (!nowDynamicPushList.has(biliUID)) {
       nowDynamicPushList.set(biliUID, pushList);
     }
@@ -341,10 +355,6 @@ async function getNeedPushList(uid) {
   let url = `${BiliDynamicApiUrl}?host_mid=${uid}`;
   let res = await common.bilibiliUrlPost(url);
 
-  // if (res) {
-  //   return false;
-  // }
-
   if (res.code != 0) {
     // 请求失败，不记录，跳过，下一个
     await common.sleep(BiliApiRequestTimeInterval);
@@ -355,6 +365,7 @@ async function getNeedPushList(uid) {
   if (data.length === 0) {
     // 没有动态，记录一个空数组，跳过，下一个
     await common.sleep(BiliApiRequestTimeInterval);
+    nowDynamicPushList.set(uid, []);
     return false;
   }
 
@@ -461,7 +472,7 @@ async function pushAgain(groupId, msg) {
  */
 function buildBiliPushSendDynamic(biliUser, dynamic, info) {
   let desc, msg, pics;
-  let title = `B站【${biliUser.name}】动态推送：`;
+  let title = `B站【${biliUser.name}】动态推送：\n`;
 
   // 以下对象结构参考米游社接口，接口在顶部定义了
   switch (dynamic.type) {
@@ -469,7 +480,7 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
       desc = dynamic?.modules?.module_dynamic?.major?.archive;
       if (!desc) return;
 
-      title = `B站【${biliUser.name}】视频动态推送：`;
+      title = `B站【${biliUser.name}】视频动态推送：\n`;
       // 视频动态仅由标题、封面、链接组成
       msg = [title, desc.title, segment.image(desc.cover), resetLinkUrl(desc.jump_url)];
 
@@ -478,11 +489,11 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
       desc = dynamic?.modules?.module_dynamic?.desc;
       if (!desc) return;
 
-      title = `B站【${biliUser.name}】动态推送：`;
+      title = `B站【${biliUser.name}】动态推送：\n`;
       if (getSendType(info) != "default") {
         msg = [title, `${desc.text}`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
       } else {
-        msg = [title, `${dynamicContentLimit(desc.text)}`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+        msg = [title, `${dynamicContentLimit(desc.text)}\n`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
       }
 
       return msg;
@@ -495,14 +506,14 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
         return segment.image(item.src);
       });
 
-      title = `B站【${biliUser.name}】图文动态推送：`;
+      title = `B站【${biliUser.name}】图文动态推送：\n`;
 
       if (getSendType(info) != "default") {
         msg = [title, `${desc.text}`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
       } else {
         if (pics.length > DynamicPicCountLimit) pics.length = DynamicPicCountLimit; // 最多发DynamicPicCountLimit张图，不然要霸屏了
         // 图文动态由内容（经过删减避免过长）、图片、链接组成
-        msg = [title, `${dynamicContentLimit(desc.text)}`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+        msg = [title, `${dynamicContentLimit(desc.text)}\n`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
       }
 
       return msg;
@@ -517,7 +528,7 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
         });
       }
 
-      title = `B站【${biliUser.name}】文章动态推送：`;
+      title = `B站【${biliUser.name}】文章动态推送：\n`;
       // 专栏/文章动态由标题、图片、链接组成
       msg = [title, desc.title, ...pics, resetLinkUrl(desc.jump_url)];
 
@@ -539,19 +550,19 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
         return false;
       }
 
-      title = `B站【${biliUser.name}】转发动态推送：`;
+      title = `B站【${biliUser.name}】转发动态推送：\n`;
 
       if (getSendType(info) != "default") {
         msg = [
           title,
-          `${desc.text}\n---以下为转发内容---`,
+          `${desc.text}\n---以下为转发内容---\n`,
           ...orig,
           `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`,
         ];
       } else {
         msg = [
           title,
-          `${dynamicContentLimit(desc.text, 1, 15)}\n---以下为转发内容---`,
+          `${dynamicContentLimit(desc.text, 1, 15)}\n---以下为转发内容---\n`,
           ...orig,
           `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`,
         ];
@@ -566,7 +577,7 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
       desc = desc?.live_play_info;
       if (!desc) return;
 
-      title = `B站【${biliUser.name}】直播动态推送：`;
+      title = `B站【${biliUser.name}】直播动态推送：\n`;
       // 直播动态由标题、封面、链接组成
       msg = [title, `${desc.title}`, segment.image(desc.cover), resetLinkUrl(desc.link)];
 

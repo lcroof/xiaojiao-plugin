@@ -126,12 +126,13 @@ async function replyMake(messages, isGroup, title) {
 
     let forwardMsg = await Bot.makeForwardMsg(msgList, !isGroup);
 
-    // if (title) {
-    //     // 处理合并消息在点开前看到的描述
-    //     forwardMsg.data.forEach((msg)=>{
-    //         msg.message = msg.message.replace(/\n/g, "").replace(/<title color="#777777" size="26">(.+?)<\/title>/g, "___").replace(/___+/, `<title color="#777777" size="26">${title}</title>`);
-    //     })
-    // }
+    if (title) {
+        // 处理合并消息在点开前看到的描述
+        forwardMsg.data.forEach((msg)=>{
+            let message = msg.message.replace(/\n/g, "");
+            msg.message = message;
+        })
+    }
 
     return forwardMsg;
 }

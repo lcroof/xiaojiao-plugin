@@ -32,7 +32,7 @@ async function initBiliPushJson() {
   }
 
   if (fs.existsSync(filePath + "BilibiliPushConfig.json")) {
-    BilibiliPushConfig = common.readData(filePath, "json");
+    BilibiliPushConfig = common.readData("BilibiliPushConfig", "json");
 
     // 如果设置了过期时间
     let faultTime = Number(BilibiliPushConfig.dynamicPushFaultTime);
@@ -283,8 +283,7 @@ export async function setBiliPushFaultTime(e) {
     return false;
   }
 
-  let time = e.msg.split("B站推送过期时间")[1].trim();
-  time = Number(time);
+  let time = Number(e.msg.split("B站推送过期时间")[1].trim());
 
   if (time < 1 || time > 24) {
     e.reply("时间不能乱填哦\n时间单位：小时，范围[1-24]\n示例：B站推送过期时间 1");
