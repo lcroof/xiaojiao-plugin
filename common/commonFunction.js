@@ -129,8 +129,9 @@ async function replyMake(messages, isGroup, title) {
     if (title) {
         // 处理合并消息在点开前看到的描述
         forwardMsg.data.forEach((msg)=>{
-            let message = msg.message.replace(/\n/g, "");
-            msg.message = message;
+            if (typeof msg.message === 'string') {
+                msg.message = msg.message.toString().replace(/\n/g, "");
+            }
         })
     }
 
