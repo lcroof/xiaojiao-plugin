@@ -502,18 +502,27 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
       pics = dynamic?.modules?.module_dynamic?.major?.draw?.items;
       if (!desc && !pics) return;
 
-      pics = pics.map((item) => {
-        return segment.image(item.src);
-      });
-
-      title = `B站【${biliUser.name}】图文动态推送：\n`;
-
-      if (getSendType(info) != "default") {
-        msg = [title, `${desc.text}`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+      if (!pics) {
+        title = `B站【${biliUser.name}】动态推送：\n`;
+        if (getSendType(info) != "default") {
+          msg = [title, `${desc.text}`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+        } else {
+          msg = [title, `${dynamicContentLimit(desc.text)}\n`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+        }
       } else {
-        if (pics.length > DynamicPicCountLimit) pics.length = DynamicPicCountLimit; // 最多发DynamicPicCountLimit张图，不然要霸屏了
-        // 图文动态由内容（经过删减避免过长）、图片、链接组成
-        msg = [title, `${dynamicContentLimit(desc.text)}\n`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+        pics = pics.map((item) => {
+          return segment.image(item.src);
+        });
+
+        title = `B站【${biliUser.name}】图文动态推送：\n`;
+
+        if (getSendType(info) != "default") {
+          msg = [title, `${desc.text}`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+        } else {
+          if (pics.length > DynamicPicCountLimit) pics.length = DynamicPicCountLimit; // 最多发DynamicPicCountLimit张图，不然要霸屏了
+          // 图文动态由内容（经过删减避免过长）、图片、链接组成
+          msg = [title, `${dynamicContentLimit(desc.text)}\n`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+        }
       }
 
       return msg;
