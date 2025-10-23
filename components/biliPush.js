@@ -352,7 +352,7 @@ async function pushDynamic(pushInfo) {
  * 获取需要推送的动态列表
  */
 async function getNeedPushList(uid) {
-  let url = `${BiliDynamicApiUrl}?host_mid=${uid}`;
+  let url = `${BiliDynamicApiUrl}?host_mid=${uid}&features=itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote,forwardListHidden,decorationCard,commentsNewVersion,onlyfansAssetsV2,ugcDelete,onlyfansQaCard`;
   let res = await common.bilibiliUrlPost(url);
 
   if (res.code != 0) {
