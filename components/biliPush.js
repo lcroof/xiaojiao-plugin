@@ -177,7 +177,7 @@ export async function createBiliPush(e) {
       return true;
     }
 
-    let url = `${BiliDynamicApiUrl}?host_mid=${uid}`;
+    let url = `${BiliDynamicApiUrl}?host_mid=${uid}&features=itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote,forwardListHidden,decorationCard,commentsNewVersion,onlyfansAssetsV2,ugcDelete,onlyfansQaCard`;
     let res = await common.bilibiliUrlPost(url);
 
     // if (res) {
@@ -498,30 +498,31 @@ function buildBiliPushSendDynamic(biliUser, dynamic, info) {
 
       return msg;
     case "DYNAMIC_TYPE_DRAW":
-      desc = dynamic?.modules?.module_dynamic?.desc;
-      pics = dynamic?.modules?.module_dynamic?.major?.draw?.items;
-      if (!desc && !pics) return;
+      desc = dynamic?.modules?.module_dynamic?.major?.opus;      
+      if (!desc) return;
+
+      pics = desc.pics;
 
       if (!pics) {
         title = `B站【${biliUser.name}】动态推送：\n`;
         if (getSendType(info) != "default") {
-          msg = [title, `${desc.text}`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+          msg = [title, `${desc.summary.text}`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
         } else {
-          msg = [title, `${dynamicContentLimit(desc.text)}\n`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+          msg = [title, `${dynamicContentLimit(desc.summary.text)}\n`, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
         }
       } else {
         pics = pics.map((item) => {
-          return segment.image(item.src);
+          return segment.image(item.url);
         });
 
         title = `B站【${biliUser.name}】图文动态推送：\n`;
 
         if (getSendType(info) != "default") {
-          msg = [title, `${desc.text}`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+          msg = [title, `${desc.summary.text}`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
         } else {
           if (pics.length > DynamicPicCountLimit) pics.length = DynamicPicCountLimit; // 最多发DynamicPicCountLimit张图，不然要霸屏了
           // 图文动态由内容（经过删减避免过长）、图片、链接组成
-          msg = [title, `${dynamicContentLimit(desc.text)}\n`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
+          msg = [title, `${dynamicContentLimit(desc.summary.text)}\n`, ...pics, `${BiliDrawDynamicLinkUrl}${dynamic.id_str}`];
         }
       }
 
