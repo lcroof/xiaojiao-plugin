@@ -129,7 +129,7 @@ async function ngaContext(e) {
         }
     }
     //获取标题和回复数
-    let msgTitle = `NGA消息解析 ` + subject;
+    let msgTitle = subject;
     let msgReply = `回复数 ` + replyCount;
     replyPage = { "reply": replyPage }
 
@@ -158,6 +158,7 @@ async function ngaContext(e) {
     }
 
     //放在消息合并
+    e.reply(subject)
     let sendMsg = msgCombine(ngaUrl, msgTitle, msgReply, replypics);
     let getCombineSendMsg = await common.replyMake(sendMsg, true, null);
     Bot.pickGroup(e.group_id)
