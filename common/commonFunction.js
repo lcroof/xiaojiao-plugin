@@ -328,13 +328,14 @@ function functionAllow(e) {
 }
 
 async function bilibiliUrlPost(url) {
-    let BilibiliCookies;
+    let BilibiliCookies;    
+
     if (readData("BilibiliCookies", "yaml") !== "") {
         BilibiliCookies = readData("BilibiliCookies", "yaml");
     }
 
     if (BilibiliCookies === "") {
-        this.e.reply("没有设置cookies，你可以执行命令\n#B站推送ck [你的ck]\n来进行设置");
+        Bot.sendMasterMsg("没有设置cookies，你可以执行命令\n#B站推送ck [你的ck]\n来进行设置");
         return true;
     }
 
@@ -342,14 +343,14 @@ async function bilibiliUrlPost(url) {
     const response = await fetch(url, { method: "get", headers: BiliReqHeaders });
 
     if (!response.ok) {
-        this.e.reply("好像连不到B站了捏");
+        Bot.sendMasterMsg("好像连不到B站了捏");
         return true;
     }
 
     const res = await response.json();
 
     if (res.code == '-352') {
-        this.e.reply("B站ck已过期，你可以执行命令\n#B站推送ck [你的ck]\n来替换过期的ck");
+        Bot.sendMasterMsg("B站ck已过期，你可以执行命令\n#B站推送ck [你的ck]\n来替换过期的ck");
         return true;
     }
     return res;
