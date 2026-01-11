@@ -23,6 +23,7 @@ if (isV3) {
 
 export const botConfig = config;
 export const BiliReqHeaders = {
+    'host': 'api.bilibili.com',
     'cookie': '',
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
     'accept-encoding': 'gzip, deflate, br',
@@ -37,7 +38,7 @@ export const BiliReqHeaders = {
     'sec-fetch-user': '?1',
     'upgrade-insecure-requests': '1',
     'priority': 'u=0, i',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.50',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
 }
 
 /**
