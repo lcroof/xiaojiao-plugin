@@ -6,26 +6,34 @@ import nga from "../components/nga.js"
 export class MessageAnalyse extends plugin {
     constructor(e) {
         super({
-            name: 'B站解析-面板',
-            dsc: 'B站视频解析',
+            name: '解析面板',
+            dsc: '贴片界面消息解析',
             event: 'message',
             priority: 1,
             rule: [
                 {
-                    reg: `^${rulePrefix}(开启|关闭)视频解析$`,
+                    reg: `^#?(开启|关闭)视频解析$`,
                     fnc: 'updateBiliAnalyse'
                 },
                 {
-                    reg: `^$(开启|关闭)NGA链接解析$`,
+                    reg: `^#?(开启|关闭)NGA链接解析$`,
                     fnc: 'updateNgaAnalyse'
                 },
                 {
-                    reg: /.*(b23.tv.*\\\/[A-Za-z0-9]+|bilibili.com\/.*\/[A-Za-z0-9]+).*$/gm,
+                    reg: /(b23\.tv\\?\/[A-Za-z0-9]+|bilibili\.com\\?\/[A-Za-z0-9\-_?&=.\/]+)/,
                     fnc: 'biliMsgAnalyse'
                 },
                 {
                     reg: `(https://nga|https://bbs.nga).*tid\=[0-9]+`,
                     fnc: 'ngaMsgAnalyse'
+                },
+                {
+                    reg: `^#?NGA(登录)?(ck|cookie)\\s*.*$`,
+                    fnc: 'setNgaCookie'
+                },
+                {
+                    reg: `^#?(B站|b站)(登录)?(ck|cookie)\\s*.*$`,
+                    fnc: 'setBiliCookie'
                 },
                 {
                     reg: `B站解析测试`,
@@ -45,9 +53,7 @@ export class MessageAnalyse extends plugin {
        * @returns 
        */
     async updateBiliAnalyse(e) {
-        if (bili.updateBvAnalyse(e)) {
-            e.reply("成功设置解析");
-        }
+        bili.updateBvAnalyse(e);
     }
 
     /**
@@ -56,9 +62,7 @@ export class MessageAnalyse extends plugin {
        * @returns 
        */
     async updateNgaAnalyse(e) {
-        if (nga.updateNgaAnalyse(e)) {
-            e.reply("成功设置解析");
-        }
+        nga.updateNgaAnalyse(e);
     }
 
     /**
@@ -91,5 +95,21 @@ export class MessageAnalyse extends plugin {
      */
     async ngaMsgAnalyseTest(e) {
         nga.ngaAnalyseTest(e);        
+    }
+
+    /**
+     * 设置NGA登录Cookie
+     * @param {*} e 
+     */
+    async setNgaCookie(e) {
+        nga.setNgaCookie(e)
+    }
+
+    /**
+     * 设置B站登录Cookie
+     * @param {*} e 
+     */
+    async setBiliCookie(e) {
+        bili.setBiliCookie(e)
     }
 }

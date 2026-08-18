@@ -1,0 +1,95 @@
+body {
+  width: 830px;
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+
+/* 按目录说明.txt：.container 主图 main.png 高度自适应铺在顶部，下方由 body 的 bg.jpg 背景填充 */
+.container {
+  background-repeat: no-repeat !important;
+  background-position: top left !important;
+  background-size: 100% auto !important;
+}
+.head-box {
+  margin: 40px 0 10px 0;
+  padding-bottom: 0;
+  text-align: center;
+}
+.head-box .title {
+  font-size: 44px;
+  font-weight: bold;
+  color: #d3bc8e;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .8);
+}
+.head-box .label {
+  font-size: 14px;
+  color: #aaa;
+  margin-top: 8px;
+}
+.cont-box {
+  border-radius: 15px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 5px 15px;
+  overflow: hidden;
+  box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+.help-group {
+  color: #d3bc8e;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 8px 0 5px 10px;
+}
+.help-table {
+  text-align: center;
+  border-collapse: collapse;
+  margin: 5px -10px -10px -15px;
+  border-radius: 0 0 10px 10px;
+  display: table;
+  overflow: hidden;
+  width: calc(100% + 30px);
+  color: #fff;
+}
+.help-table .tr {
+  display: table-row;
+}
+.help-table .td,
+.help-table .th {
+  font-size: 14px;
+  display: table-cell;
+  box-shadow: 0 0 1px 0 #888 inset;
+  padding: 12px 0 12px 50px;
+  line-height: 24px;
+  position: relative;
+  width: 33.33%;
+  text-align: left;
+}
+.help-icon {
+  width: 40px;
+  height: 40px;
+  display: block;
+  position: absolute;
+  left: 6px;
+  top: 12px;
+  border-radius: 8px;
+}
+.help-icon.emoji {
+  font-size: 32px;
+  line-height: 40px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+}
+.help-title {
+  display: block;
+  color: #d3bc8e;
+  font-size: 16px;
+  line-height: 24px;
+}
+.help-desc {
+  display: block;
+  font-size: 13px;
+  line-height: 18px;
+  color: #eee;
+}

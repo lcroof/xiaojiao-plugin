@@ -1,0 +1,41 @@
+{{extend defaultLayout}}
+
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{pluResPath}}help/index.css"/>
+<% style = style.replace(/{{_res_path}}/g, _res_path) %>
+{{@style}}
+{{/block}}
+
+{{block 'main'}}
+<div class="info_box">
+  <div class="head-box">
+    <div class="title">{{helpCfg.title||"使用帮助"}}</div>
+    <div class="label">{{helpCfg.subTitle || "Yunzai-Bot & xiaojiao-plugin"}}</div>
+  </div>
+</div>
+
+{{each helpGroup group}}
+<div class="cont-box">
+  <div class="help-group">{{group.group}}</div>
+  <div class="help-table">
+    {{each group.list help idx}}
+    {{if idx%3 == 0}}
+    <div class="tr">
+      {{/if}}
+      <div class="td">
+        {{if help.css}}
+        <span class="help-icon" style="{{help.css}}"></span>
+        {{else}}
+        <span class="help-icon emoji">{{help.icon}}</span>
+        {{/if}}
+        <strong class="help-title">{{help.title}}</strong>
+        <span class="help-desc">{{help.desc}}</span>
+      </div>
+      {{if idx%3 ==2 || idx == group.list.length -1}}
+    </div>
+    {{/if}}
+    {{/each}}
+  </div>
+</div>
+{{/each}}
+{{/block}}

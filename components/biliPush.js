@@ -650,10 +650,358 @@ function getSendType(info) {
   return "default";
 }
 
+/**
+ * 开启|关闭B站推送（当前群）
+ * @param {*} e 
+ */
+export async function changeBilibiliPush(e) {
+  if (!common.functionAllow(e)) {
+    return false;
+  }
+
+  // 推送对象记录
+  let pushID = "";
+  if (e.isGroup) {
+    pushID = e.group_id;
+  } else {
+    return false;
+  }
+  if (!pushID) {
+    return true;
+  }
+
+  if (e.msg.includes("开启")) {
+    let info = PushBilibiliDynamic[pushID];
+    if (!info) {
+      PushBilibiliDynamic[pushID] = {
+        isNewsPush: true, // 是否开启了推送
+        adminPerm: true, // 默认群聊时，仅管理员拥有权限，此状态为false时，连狗管理都没有权限，但是定时任务会推动态
+        isGroup: e.isGroup || false,
+        biliUserList: [{ uid: "401742377", name: "原神" }], // 默认推送原神B站
+        pushTarget: pushID,
+        pushTargetName: e.isGroup ? e.group_name : e.sender?.nickname,
+      };
+    } else {
+      PushBilibiliDynamic[pushID].isNewsPush = true;
+    }
+    common.savePushJson(PushBilibiliDynamic);
+    Bot.logger.mark('开启B站动态推送:' + pushID);
+    e.reply('B站动态推送已开启了\n每间隔' + pushTimeInterval + '分钟会自动检测一次有没有新动态\n如果有的话会自动发送动态内容到这里的~');
+  }
+
+  if (e.msg.includes("关闭")) {
+    if (PushBilibiliDynamic[pushID]) {
+      PushBilibiliDynamic[pushID].isNewsPush = false;
+      common.savePushJson(PushBilibiliDynamic);
+      Bot.logger.mark('关闭B站动态推送:' + pushID);
+      e.reply("本群的B站动态推送已关闭");
+    } else {
+      e.reply("你还妹在这里开启过B站动态推送呢");
+    }
+  }
+
+  return true;
+}
+
+/**
+ * (开启|关闭|允许|禁止)群B站推送
+ * @param {*} e 
+ * @returns 
+ */
+export async function changeGroupBilibiliPush(e) {
+  if (!e.isMaster) {
+    return false;
+  }
+
+  let commands = e.msg.split("群B站推送");
+  let command = commands[0];
+  let groupID = commands[1].trim();
+
+  if (!groupID) {
+    e.reply('群ID呢？我那么大个群ID呢？\n示例：' + command + '群B站推送 248635791');
+    return true;
+  }
+  if (isNaN(Number(groupID))) {
+    e.reply(groupID + ' <- 群ID不存在\n示例：' + command + '群B站推送 248635791');
+    return true;
+  }
+
+  let group = Bot.gl.get(Number(groupID));
+  if (!group) {
+    e.reply("我不在这个群里哦");
+    return true;
+  }
+  // 没有开启过的话，那就给初始化一个
+  if (!PushBilibiliDynamic[groupID]) {
+    PushBilibiliDynamic[groupID] = {
+      isNewsPush: true,
+      adminPerm: true,
+      isGroup: true,
+      biliUserList: [{ uid: "401742377", name: "原神" }], // 默认推送原神B站
+      pushTarget: groupID,
+      pushTargetName: group.group_name,
+    };
+  }
+
+  switch (command) {
+    case "开启":
+    case "#开启":
+      PushBilibiliDynamic[groupID].isNewsPush = true;
+      break;
+    case "关闭":
+    case "#关闭":
+      PushBilibiliDynamic[groupID].isNewsPush = false;
+      break;
+  }
+
+  common.savePushJson(PushBilibiliDynamic);
+  e.reply('【' + group.group_name + '】设置' + command + '推送成功~');
+
+  return true;
+}
+
+/**
+ * 新增|删除B站动态推送UID
+ * @param {*} e 
+ */
+export async function updateBilibiliPush(e) {
+  if (new RegExp(/(订阅|增加|新增)/).test(e.msg)) {
+    createBiliPush(e);
+  }
+  if (new RegExp(/(移除|去除|取消)/).test(e.msg)) {
+    deleteBiliPush(e);
+  }
+  return true;
+}
+
+/**
+ * 返回当前聊天对象推送的B站用户列表
+ * @param {*} e 
+ */
+export async function getBilibiliPushUserList(e) {
+  // 是否允许使用这个功能
+  if (!common.isAllowPushFunc(e)) {
+    return false;
+  }
+
+  if (e.msg.indexOf("群") > -1) {
+    if (!e.isMaster) {
+      e.reply("只有狗主人才可以查看所有群");
+      return false;
+    }
+
+    let groupMap = Bot.gl;
+    let groupList = [];
+
+    for (let [groupID, groupObj] of groupMap) {
+      groupID = "" + groupID;
+      let info = PushBilibiliDynamic[groupID];
+      if (!info) {
+        groupList.push(groupObj.group_name + '(' + groupID + ')：未开启，允许使用');
+      } else {
+        PushBilibiliDynamic[groupID].pushTargetName = groupObj.group_name;
+        let tmp = PushBilibiliDynamic[groupID];
+        groupList.push(
+          groupObj.group_name + '(' + groupID + ')：' + (tmp.isNewsPush ? "已开启" : "已关闭") + '，' + (tmp.adminPerm === false ? "无权限" : "有权限") + '，' + (tmp.allowPush === false ? "禁止使用" : "允许使用")
+        );
+      }
+    }
+
+    e.reply('B站推送各群使用情况：\n' + groupList.join("\n"));
+
+    return true;
+  }
+
+  // 推送对象记录
+  let pushID = "";
+  if (e.isGroup) {
+    pushID = e.group_id;
+  } else {
+    return false;
+  }
+  if (!pushID) {
+    return true;
+  }
+  if (!PushBilibiliDynamic[pushID]) {
+    return e.reply("开启过B站推送才能查哦");
+  }
+
+  let push = PushBilibiliDynamic[pushID];
+  let info = (push.biliUserList || [])
+    .map((item) => {
+      return item.name + '：' + item.uid;
+    })
+    .join("\n");
+  let status = push.isNewsPush ? "开启" : "关闭";
+
+  e.reply('当前B站推送是【' + status + '】状态哦\n推送的B站用户有：\n' + info);
+
+  return true;
+}
+
+/**
+ * 设置B站推送Cookie
+ * @param {*} e 
+ */
+export async function setBiliPushCookie(e) {
+  if (!e.isMaster) {
+    return false;
+  }
+  let ck = e.msg.split(' ').slice(1).join(' ').trim();
+  if (!ck) {
+    e.reply("Cookie呢？我那么大个Cookie呢？\n示例：#B站推送ck SESSDATA=xxx; bili_jct=xxx");
+    return false;
+  }
+  common.saveData("BilibiliCookies", ck, "yaml");
+
+  return true;
+}
+
+/**
+ * 设置B站推送定时任务时间
+ * @param {*} e 
+ */
+export async function setBiliPushTimeInterval(e) {
+  if (!e.isMaster) {
+    return false;
+  }
+
+  let time = e.msg.split("B站推送时间")[1].trim();
+  time = Number(time);
+
+  if (time <= 0 || time >= 60) {
+    e.reply('时间不能乱填哦\n时间单位：分钟，范围[1-60)\n示例：B站推送时间 10');
+    return true;
+  }
+
+  BilibiliPushConfig.dynamicPushTimeInterval = time;
+  await common.saveConfigJson(BilibiliPushConfig);
+  e.reply('设置间隔时间 ' + time + '分钟 成功，重启后生效~\n请手动重启或者跟我说#重启');
+
+  return true;
+}
+
+/**
+ * 设置B站推送过期时间
+ * @param {*} e 
+ */
+export async function setBiliPushFaultTime(e) {
+  if (!e.isMaster) {
+    return false;
+  }
+
+  let time = Number(e.msg.split("B站推送过期时间")[1].trim());
+
+  if (time < 1 || time > 24) {
+    e.reply('时间不能乱填哦\n时间单位：小时，范围[1-24]\n示例：B站推送过期时间 1');
+    return true;
+  }
+
+  BilibiliPushConfig.dynamicPushFaultTime = time;
+  await common.saveConfigJson(BilibiliPushConfig);
+  e.reply('设置过期时间 ' + time + '小时 成功，重启后生效\n请手动重启或者跟我说#重启');
+
+  return true;
+}
+
+/**
+ * 开启|关闭B站转发推送
+ * @param {*} e 
+ */
+export async function changeBiliPushTransmit(e) {
+  if (!common.functionAllow(e)) {
+    return false;
+  }
+
+  let pushID = "";
+  if (e.isGroup) {
+    pushID = e.group_id;
+  } else {
+    return false;
+  }
+  let info = PushBilibiliDynamic[pushID];
+  if (!info) {
+    e.reply("你还妹在这里开启过B站动态推送呢");
+    return true;
+  }
+
+  if (e.msg.indexOf("开启") > -1) {
+    PushBilibiliDynamic[pushID].pushTransmit = true;
+    e.reply("转发动态推送已开启");
+  }
+  if (e.msg.indexOf("关闭") > -1) {
+    PushBilibiliDynamic[pushID].pushTransmit = false;
+    e.reply("转发动态推送已关闭");
+  }
+
+  await common.savePushJson(PushBilibiliDynamic);
+
+  return true;
+}
+
+/**
+ * 设置B站推送(默认|合并|图片)
+ * @param {*} e 
+ */
+export async function setBiliPushSendType(e) {
+  if (!common.functionAllow(e)) {
+    return false;
+  }
+
+  let pushID = "";
+  if (e.isGroup) {
+    pushID = e.group_id;
+  } else {
+    return false;
+  }
+
+  initBiliPushJson();
+  let info = PushBilibiliDynamic[pushID];
+  if (!info) {
+    e.reply("你还妹在这里开启过B站动态推送呢");
+    return true;
+  }
+
+  let type = e.msg.substr(e.msg.length - 2);
+  let typeCode = "";
+  switch (type) {
+    case "默认":
+      typeCode = "default";
+      break;
+    case "合并":
+      typeCode = "merge";
+      break;
+    case "图片":
+      typeCode = "picture";
+      break;
+  }
+  if (e.msg.indexOf("全局") > -1) {
+    BilibiliPushConfig.sendType = typeCode;
+    type = "全局" + type;
+    await common.saveConfigJson(BilibiliPushConfig);
+  } else {
+    PushBilibiliDynamic[pushID].sendType = typeCode;
+    await common.savePushJson(PushBilibiliDynamic);
+  }
+
+  e.reply('设置B站推送方式：【' + type + '】成功！');
+
+  return true;
+}
+
 export default {
   initBiliPushJson,
   task,
   pushScheduleJob,
   createBiliPush,
-  deleteBiliPush
+  deleteBiliPush,
+  changeBilibiliPush,
+  changeGroupBilibiliPush,
+  updateBilibiliPush,
+  getBilibiliPushUserList,
+  setBiliPushCookie,
+  setBiliPushTimeInterval,
+  setBiliPushFaultTime,
+  changeBiliPushTransmit,
+  setBiliPushSendType
 };

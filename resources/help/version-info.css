@@ -1,0 +1,55 @@
+body {
+  width: 640px;
+  background-image: url("./theme/default/bg.jpg");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+
+/* 按目录说明.txt：.container 主图 main.png 高度自适应铺在顶部，下方由 body 的 bg.jpg 背景填充 */
+.container {
+  background-repeat: no-repeat !important;
+  background-position: top left !important;
+  background-size: 100% auto !important;
+}
+.log-cont {
+  border-radius: 15px;
+  margin: 20px 0;
+  padding: 10px 20px;
+  background: rgba(43, 52, 61, 0.8);
+  box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.15);
+}
+.cont-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #d3bc8e;
+  padding: 8px 0;
+}
+.cont-title.current {
+  color: #fff;
+}
+.log-ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.log-ul li {
+  margin: 6px 0;
+}
+.log-ul li p {
+  margin: 4px 0;
+  color: #eee;
+  font-size: 14px;
+}
+.sub-log-ul {
+  margin: 2px 0;
+  color: #aaa;
+  font-size: 13px;
+}
+.sub-log-ul li {
+  margin: 2px 0;
+}
+.empty {
+  color: #aaa;
+  font-size: 14px;
+  padding: 10px 0;
+}

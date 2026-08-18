@@ -4,15 +4,20 @@ import { botConfig } from "../common/commonFunction.js"
 import moment from "moment";
 import fetch from "node-fetch";
 
-async function ngaContext(e) {
+async function ngaContext(e, isTest = false) {
     let msg = e.msg;
     let titlePage = {}
     let replyPage = {}
     let allReply = []
 
+    //解析开关关闭时不处理（测试命令不受影响）
+    if (!isTest && !common.isAnalyseEnabled("nga")) {
+        return false
+    }
+
     if (e.raw_message == '[json消息]') {
-        let json = JSON.parse(e.message[0].data)
-        msg = msg || json.meta.detail_1?.qqdocurl || json.meta.news?.jumpUrl
+        let json = JSON.parse(e.message[0]?.data || '{}')
+        msg = msg || json?.meta?.detail_1?.qqdocurl || json?.meta?.news?.jumpUrl
     }
     if (e.raw_message == '[xml消息]') {
         logger.warn(msg.toString())
@@ -27,10 +32,16 @@ async function ngaContext(e) {
 
     //编一个RSS申请头，POST这个tid，获取所有data
     let postUrl = `https://ngabbs.com/app_api.php?__lib=post&__act=list`
-    let postInfo = await ngaUrlPost(postUrl, tid, 1)
+    let postInfo
+    try {
+        postInfo = await ngaUrlPost(postUrl, tid, 1)
+    } catch (err) {
+        e.reply(`获取主题内容失败：${err.message}`)
+        return false
+    }
 
     if (postInfo.code !== 0) {
-        e.reply(`未获取到主题内容`)
+        e.reply(ngaErrorMsg(postInfo, '未获取到主题内容'))
         return false
     }
 
@@ -49,17 +60,22 @@ async function ngaContext(e) {
         e.reply(`楼层过多，生成速度不快，请稍后`)
     }
 
-    postResult.forEach(result => {
+    ;(postResult || []).forEach(result => {
         allReply.push(result)
     });
 
 
-    while (totalPage >= currentPage + 1) {
-        postInfo = await ngaUrlPost(postUrl, tid, currentPage + 1)
-        currentPage = postInfo.currentPage
-        postInfo.result.forEach(result => {
-            allReply.push(result)
-        });
+    try {
+        while (totalPage >= currentPage + 1) {
+            postInfo = await ngaUrlPost(postUrl, tid, currentPage + 1)
+            currentPage = postInfo.currentPage
+            ;(postInfo.result || []).forEach(result => {
+                allReply.push(result)
+            });
+        }
+    } catch (err) {
+        e.reply(`获取后续楼层失败：${err.message}`)
+        return false
     }
 
     //重组json
@@ -210,34 +226,118 @@ function msgCombine(ngaUrl, title, reply, pics) {
 }
 
 function msgAnalyse(e) {
-    ngaContext(e)
+    return ngaContext(e)
 }
 
+/**
+ * 开启|关闭NGA链接解析
+ * @param {*} e 
+ */
 function updateNgaAnalyse(e) {
-
+    if (!common.adminAllow(e)) {
+        return false
+    }
+    if (e.msg.includes("开启")) {
+        common.setAnalyseEnabled("nga", true)
+        e.reply("NGA链接解析已开启~")
+    }
+    if (e.msg.includes("关闭")) {
+        common.setAnalyseEnabled("nga", false)
+        e.reply("NGA链接解析已关闭~")
+    }
 }
 
+/**
+ * NGA解析测试
+ * 示例：NGA解析测试 12345678 或 NGA解析测试 https://ngabbs.com/read.php?tid=12345678
+ * @param {*} e 
+ */
 async function ngaAnalyseTest(e) {
-    e.msg = '';
-    e.message = { data: `` }
-    e.raw_message = '[json消息]'
-    ngaContext(e)
+    let testTid = (e.msg.match(/tid\=?\s*([0-9]+)/) || [])[1]
+    if (!testTid) {
+        e.reply("示例：NGA解析测试 12345678 或 NGA解析测试 https://ngabbs.com/read.php?tid=12345678")
+        return false
+    }
+    e.msg = `https://ngabbs.com/read.php?tid=${testTid}`
+    e.message = []
+    e.raw_message = e.msg
+    return ngaContext(e, true)
 }
 
+/**
+ * 设置NGA登录Cookie（仅主人可操作）
+ * Cookie获取方式：浏览器登录 https://ngabbs.com 后，打开开发者工具复制登录Cookie
+ * （至少包含 ngaPassportUid 与 ngaPassportCid）
+ * @param {*} e 
+ */
+function setNgaCookie(e) {
+    if (!e.isMaster) {
+        e.reply("哒咩，只有主人可以设置NGA登录Cookie哦")
+        return false
+    }
+    let ck = e.msg.split(' ').slice(1).join(' ').trim()
+    if (!ck) {
+        e.reply("Cookie呢？我那么大个Cookie呢？\n示例：#NGA登录ck ngaPassportUid=xxx; ngaPassportCid=xxx")
+        return false
+    }
+    common.saveData("NgaCookies", ck, "yaml")
+    e.reply("NGA登录Cookie设置成功\n之后解析NGA帖子时会以该账号的登录态获取内容~")
+    return true
+}
+
+/**
+ * 读取NGA登录Cookie，未设置时返回空字符串
+ */
+function getNgaCookies() {
+    let ck = common.readData("NgaCookies", "yaml")
+    return ck ? ck.toString().trim() : ""
+}
+
+/**
+ * 拼接NGA接口错误提示，登录相关错误额外提示如何设置Cookie
+ * @param {*} postInfo 
+ * @param {string} defaultMsg 
+ */
+function ngaErrorMsg(postInfo, defaultMsg) {
+    let errMsg = postInfo?.error || postInfo?.message || defaultMsg
+    if (postInfo?.code === -1 || /登录|login/i.test(errMsg)) {
+        return `${errMsg}\n该内容需要NGA账号登录后才能获取\n可让主人发送 #NGA登录ck Cookie 设置登录态`
+    }
+    return errMsg
+}
+
+/**
+ * 以账号登录态请求NGA接口（读取帖子内容）
+ * @param {string} posturl 接口地址
+ * @param {string} tid 帖子id
+ * @param {number} pageCount 页码
+ */
 async function ngaUrlPost(posturl, tid, pageCount) {
     let formData = new URLSearchParams()
     formData.append('tid', tid)
     formData.append('page', pageCount)
 
+    let headers = {
+        'X-User-Agent': 'NGA_skull/6.0.5(iPhone10,3;iOS 12.0.1)',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+
+    // 带上账号登录态（Cookie），以登录用户身份获取帖子内容
+    let ngaCookies = getNgaCookies()
+    if (ngaCookies) {
+        headers.cookie = ngaCookies
+    }
+
     //编一个RSS申请头，POST这个tid，获取所有data
-    return await fetch(posturl, {
+    let res = await fetch(posturl, {
         method: "POST",
-        headers: {
-            'X-User-Agent': 'NGA_skull/6.0.5(iPhone10,3;iOS 12.0.1)',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
+        headers: headers,
         body: formData.toString()
-    }).then(res => res.json())
+    })
+    if (!res.ok) {
+        throw new Error(`NGA接口请求失败 HTTP ${res.status} ${res.statusText}`)
+    }
+    return await res.json()
 }
 
 function ngaContentDecode(content) {
@@ -322,5 +422,6 @@ function replyDecode(replyContent, content) {
 export default {
     msgAnalyse,
     updateNgaAnalyse,
-    ngaAnalyseTest
+    ngaAnalyseTest,
+    setNgaCookie
 }

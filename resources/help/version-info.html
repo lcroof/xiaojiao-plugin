@@ -1,0 +1,34 @@
+{{extend defaultLayout}}
+
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{pluResPath}}help/version-info.css"/>
+{{/block}}
+
+{{block 'main'}}
+{{if changelogs && changelogs.length > 0}}
+{{each changelogs ds idx}}
+<div class="log-cont">
+  <div class="cont-title {{if idx === 0}}current{{/if}}">{{if idx === 0}}当前版本{{else}}xiaojiao-plugin 版本{{/if}} {{ds.version}}</div>
+  <ul class="log-ul">
+    {{each ds.logs log}}
+    <li>
+      <p>{{@log.title}}</p>
+      {{if log.logs.length > 0}}
+      <ul class="sub-log-ul">
+        {{each log.logs ls}}
+        <li>{{@ls}}</li>
+        {{/each}}
+      </ul>
+      {{/if}}
+    </li>
+    {{/each}}
+  </ul>
+</div>
+{{/each}}
+{{else}}
+<div class="log-cont">
+  <div class="cont-title current">当前版本 {{currentVersion}}</div>
+  <div class="empty">暂无更新记录</div>
+</div>
+{{/if}}
+{{/block}}

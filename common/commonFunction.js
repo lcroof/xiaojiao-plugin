@@ -328,6 +328,47 @@ function functionAllow(e) {
     return true;
 }
 
+/**
+ * 是否允许操作（主人或群管理）
+ * @param {*} e 
+ */
+function adminAllow(e = {}) {
+    if (e.isMaster) return true;
+    if (e.isGroup && isGroupAdmin(e)) return true;
+    e.reply("哒咩，只有管理员和master可以操作哦");
+    return false;
+}
+
+/**
+ * 读取解析开关配置（默认全部开启）
+ */
+function getAnalyseConfig() {
+    let cfg = readData("AnalyseConfig", "json");
+    if (!cfg || typeof cfg !== 'object') cfg = {};
+    if (typeof cfg.bili === 'undefined') cfg.bili = true;
+    if (typeof cfg.nga === 'undefined') cfg.nga = true;
+    return cfg;
+}
+
+/**
+ * 解析功能是否开启
+ * @param {string} name bili | nga
+ */
+function isAnalyseEnabled(name) {
+    return getAnalyseConfig()[name] !== false;
+}
+
+/**
+ * 设置解析功能开关
+ * @param {string} name bili | nga
+ * @param {boolean} enable
+ */
+function setAnalyseEnabled(name, enable) {
+    let cfg = getAnalyseConfig();
+    cfg[name] = !!enable;
+    return saveData("AnalyseConfig", cfg, "json");
+}
+
 async function bilibiliUrlPost(url) {
     let BilibiliCookies;    
 
@@ -340,8 +381,10 @@ async function bilibiliUrlPost(url) {
         return true;
     }
 
-    BiliReqHeaders.cookie = BilibiliCookies;
-    const response = await fetch(url, { method: "get", headers: BiliReqHeaders });
+    // 复制一份请求头，避免污染全局配置
+    const headers = { ...BiliReqHeaders };
+    headers.cookie = BilibiliCookies;
+    const response = await fetch(url, { method: "get", headers });
 
     if (!response.ok) {
         Bot.sendMasterMsg("好像连不到B站了捏");
@@ -371,6 +414,10 @@ export default {
     savePushJson,
     saveConfigJson,
     functionAllow,
+    adminAllow,
+    getAnalyseConfig,
+    isAnalyseEnabled,
+    setAnalyseEnabled,
     saveData,
     readData,
     bilibiliUrlPost,

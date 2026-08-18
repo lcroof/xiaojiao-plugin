@@ -1,5 +1,4 @@
 import { rulePrefix } from '../utils/common.js'
-import bili from "../components/bilibili.js"
 import biliPush from '../components/biliPush.js'
 
 export class BilibiliPush extends plugin {
@@ -11,40 +10,40 @@ export class BilibiliPush extends plugin {
       priority: 1,
       rule: [
         {
-          reg: `^${rulePrefix}(订阅|增加|新增|移除|去除|取消)推送\\s*.*$`,
+          reg: '^' + rulePrefix + '(订阅|增加|新增|移除|去除|取消)推送\\s*.*$',
           fnc: 'updateBiliPush'
         },
         {
-          reg: `^${rulePrefix}推送(群)?列表$`,
+          reg: '^' + rulePrefix + '推送(群)?列表$',
           fnc: 'getBiliPushUserList'
         },
         {
-          reg: `^#(开启|关闭|允许|禁止)群B站推送\\s*.*$`,
+          reg: '^#(开启|关闭|允许|禁止)群B站推送\\s*.*$',
           fnc: 'changeGroupBiliPush'
         },
         {
-          reg: `^${rulePrefix}推送ck\\s*.+$`,
+          reg: '^' + rulePrefix + '(开启|关闭)(B站)?(动态)?推送$',
+          fnc: 'changeBiliPush'
+        },
+        {
+          reg: '^' + rulePrefix + '推送ck\\s*.+$',
           fnc: 'setBiliPushCookie'
         },
         {
-          reg: `^${rulePrefix}推送时间\\s*\\d+$`,
+          reg: '^' + rulePrefix + '推送时间\\s*\\d+$',
           fnc: 'setBiliPushTimeInterval'
         },
         {
-          reg: `^${rulePrefix}推送过期时间\\s*\\d+$`,
+          reg: '^' + rulePrefix + '推送过期时间\\s*\\d+$',
           fnc: 'setBiliPushFaultTime'
         },
         {
-          reg: `^${rulePrefix}(开启|关闭)B站转发推送$`,
+          reg: '^' + rulePrefix + '(开启|关闭)B站转发推送$',
           fnc: 'changeBiliPushTransmit'
         },
         {
-          reg: `^${rulePrefix}设置(全局)?推送(默认|合并|图片)$`,
+          reg: '^' + rulePrefix + '设置(全局)?推送(默认|合并|图片)$',
           fnc: 'setBiliPushSendType'
-        },
-        {
-          reg: `^${rulePrefix}(开启|关闭|允许|禁止)群\\s*.*推送\\s*.*$`,
-          fnc: 'setBiliGroupMemberPush'
         },
         {
           reg: '^测试B站推送$',
@@ -61,7 +60,7 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async updateBiliPush(e) {
-    if (bili.updateBilibiliPush(e))
+    if (biliPush.updateBilibiliPush(e))
     {
       e.reply("成功设置推送");
     }
@@ -73,7 +72,7 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async getBiliPushUserList(e) {
-    if (bili.getBilibiliPushUserList(e))
+    if (biliPush.getBilibiliPushUserList(e))
     {
       e.reply("成功设置推送列表");
     }
@@ -85,9 +84,20 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async changeGroupBiliPush(e) {
-    if (bili.changeGroupBilibiliPush(e))
+    if (biliPush.changeGroupBilibiliPush(e))
     {
       e.reply("成功设置群推送");
+    }
+  }
+
+  /**
+   * 开启|关闭B站推送（当前群）
+   * @param {*} e 
+   */
+  async changeBiliPush(e) {
+    if (biliPush.changeBilibiliPush(e))
+    {
+      e.reply("成功设置推送");
     }
   }
 
@@ -97,7 +107,7 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async setBiliPushCookie(e) {
-    if (bili.setBiliPushCookie(e))
+    if (biliPush.setBiliPushCookie(e))
     {
       e.reply("成功设置cookie");
     }
@@ -109,7 +119,7 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async setBiliPushTimeInterval(e) {
-    if (bili.setBiliPushTimeInterval(e))
+    if (biliPush.setBiliPushTimeInterval(e))
     {
       e.reply("成功设置推送间隔时间");
     }
@@ -121,7 +131,7 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async setBiliPushFaultTime(e) {
-    if (bili.setBiliPushFaultTime(e))
+    if (biliPush.setBiliPushFaultTime(e))
     {
       e.reply("成功设置推送过期时间");
     }
@@ -133,7 +143,7 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async changeBiliPushTransmit(e) {
-    if (bili.changeBiliPushTransmit(e))
+    if (biliPush.changeBiliPushTransmit(e))
     {
       e.reply("成功设置转发推送");
     }
@@ -145,7 +155,7 @@ export class BilibiliPush extends plugin {
    * @returns 
    */
   async setBiliPushSendType(e) {
-    if (bili.setBiliPushSendType(e))
+    if (biliPush.setBiliPushSendType(e))
     {
       e.reply("成功设置推送模式");
     }

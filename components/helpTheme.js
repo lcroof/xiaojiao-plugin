@@ -28,7 +28,10 @@ let HelpTheme = {
     let resPath = '{{_res_path}}/help/theme/'
     return {
       main: `${resPath}${name}/main.png`,
-      bg: fs.existsSync(`${dirPath}${name}/bg.jpg`) ? `${resPath}${name}/bg.jpg` : `${resPath}default/bg.jpg`,
+      // 按目录说明.txt：bg.jpg 为背景图，bg.webp 仅作兼容回退
+      bg: fs.existsSync(`${dirPath}${name}/bg.jpg`)
+        ? `${resPath}${name}/bg.jpg`
+        : (fs.existsSync(`${dirPath}${name}/bg.webp`) ? `${resPath}${name}/bg.webp` : `${resPath}default/bg.jpg`),
       style: (await Data.importModule(`resources/help/theme/${name}/config.js`)).style || {}
     }
   },

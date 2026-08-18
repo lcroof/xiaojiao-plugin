@@ -1,483 +1,205 @@
-import fs from "fs";
 import fetch from "node-fetch";
 import common from "../common/commonFunction.js";
 import runtimeRender from '../common/runtimeRender.js'
 import moment from "moment";
-import biliPush from '../components/biliPush.js'
 
-const _path = process.cwd();
-const filePath = `${_path}/data/PushNews/`
-
-if (!fs.existsSync(filePath)) {
-  fs.mkdirSync(filePath);
-}
-
-let BilibiliPushConfig = {}; // 推送配置
-let PushBilibiliDynamic = {}; // 推送对象列表
 const BiliVideoApiUrl = "https://api.bilibili.com/x/web-interface/view?bvid=";
-
-let pushTimeInterval = 10; // 推送间隔时间，单位：分钟
-
-// 延长过期时间的定义
-let DynamicPushTimeInterval = 60 * 60 * 1000; // 过期时间，单位：小时，默认一小时，范围[1,24]
+const BiliHost = "https://www.bilibili.com";
 
 /**
- * 初始化获取B站推送信息
- */
-async function initBiliPushJson() {
-  if (fs.existsSync(filePath + "PushBilibiliDynamic.json")) {
-    PushBilibiliDynamic = common.readData("PushBilibiliDynamic", "json");
-  } else {
-    common.savePushJson(PushBilibiliDynamic);
-  }
-
-  if (fs.existsSync(filePath + "BilibiliPushConfig.json")) {
-    BilibiliPushConfig = common.readData("BilibiliPushConfig", "json");
-
-    // 如果设置了过期时间
-    let faultTime = Number(BilibiliPushConfig.dynamicPushFaultTime);
-    let temp = DynamicPushTimeInterval;
-    if (!isNaN(faultTime)) {
-      temp = common.getRightTimeInterval(faultTime);
-      temp = temp < 1 ? 1 : temp; // 兼容旧设置
-      temp = temp > 24 ? 24 : temp; // 兼容旧设置
-      temp = temp * 60 * 60 * 1000;
-    }
-    DynamicPushTimeInterval = temp; // 允许推送多久以前的动态
-
-    // 如果设置了间隔时间
-    let timeInter = Number(BilibiliPushConfig.dynamicPushTimeInterval);
-    if (!isNaN(timeInter)) {
-      pushTimeInterval = common.getRightTimeInterval(timeInter);
-    }
-
-  } else {
-    common.saveConfigJson(BilibiliPushConfig);
-  }
-}
-
-/**
- * 开启|关闭B站推送
+ * 设置B站登录Cookie（仅主人可操作）
+ * Cookie获取方式：浏览器登录 https://www.bilibili.com 后，打开开发者工具复制Cookie
+ * （常用字段：SESSDATA、bili_jct、buvid3 等）
  * @param {*} e 
  */
-export async function changeBilibiliPush(e) {
-  if (!common.functionAllow(e)) {
-    return false;
-  }
-
-  // 推送对象记录
-  let pushID = "";
-  if (e.isGroup) {
-    pushID = e.group_id;
-  } else {
-    return false;
-  }
-  if (!pushID) {
-    return true;
-  }
-
-  if (e.msg.includes("开启")) {
-    let info = PushBilibiliDynamic[pushID];
-    if (!info) {
-      PushBilibiliDynamic[pushID] = {
-        isNewsPush: true, // 是否开启了推送
-        adminPerm: true, // 默认群聊时，仅管理员拥有权限，此状态为false时，连狗管理都没有权限，但是定时任务会推动态
-        isGroup: e.isGroup || false,
-        biliUserList: [{ uid: "401742377", name: "原神" }], // 默认推送原神B站
-        pushTarget: pushID,
-        pushTargetName: e.isGroup ? e.group_name : e.sender?.nickname,
-      };
-    } else {
-      PushBilibiliDynamic[pushID].isNewsPush = true;
-    }
-    common.savePushJson(PushBilibiliDynamic);
-    Bot.logger.mark(`开启B站动态推送:${pushID}`);
-    e.reply(`B站动态推送已开启了\n每间隔${pushTimeInterval}分钟会自动检测一次有没有新动态\n如果有的话会自动发送动态内容到这里的~`);
-  }
-
-  if (e.msg.includes("关闭")) {
-    if (PushBilibiliDynamic[pushID]) {
-      PushBilibiliDynamic[pushID].isNewsPush = false;
-      common.savePushJson(PushBilibiliDynamic);
-      Bot.logger.mark(`关闭B站动态推送:${pushID}`);
-      e.reply("本群的B站动态推送已关闭");
-    } else {
-      e.reply("你还妹在这里开启过B站动态推送呢");
-    }
-  }
-
-  return true;
-}
-
-/**
- * (开启|关闭|允许|禁止)群B站推送
- * @param {*} e 
- * @returns 
- */
-export async function changeGroupBilibiliPush(e) {
+function setBiliCookie(e) {
   if (!e.isMaster) {
+    e.reply("哒咩，只有主人可以设置B站Cookie哦");
     return false;
   }
-
-  let commands = e.msg.split("群B站推送");
-  let command = commands[0];
-  let groupID = commands[1].trim();
-
-  if (!groupID) {
-    e.reply(`群ID呢？我那么大个群ID呢？\n示例：${command}群B站推送 248635791`);
-    return true;
-  }
-  if (isNaN(Number(groupID))) {
-    e.reply(`${groupID} <- 群ID不存在\n示例：${command}群B站推送 248635791`);
-    return true;
-  }
-
-  let group = Bot.gl.get(Number(groupID));
-  if (!group) {
-    e.reply("我不在这个群里哦");
-    return true;
-  }
-  // 没有开启过的话，那就给初始化一个
-  if (!PushBilibiliDynamic[groupID]) {
-    PushBilibiliDynamic[groupID] = {
-      isNewsPush: true,
-      adminPerm: true,
-      isGroup: true,
-      biliUserList: [{ uid: "401742377", name: "原神" }], // 默认推送原神B站
-      pushTarget: groupID,
-      pushTargetName: group.group_name,
-    };
-  }
-
-  switch (command) {
-    case "开启":
-    case "#开启":
-      PushBilibiliDynamic[groupID].isNewsPush = true;
-      break;
-    case "关闭":
-    case "#关闭":
-      PushBilibiliDynamic[groupID].isNewsPush = false;
-      break;
-  }
-
-  common.savePushJson(PushBilibiliDynamic);
-  e.reply(`【${group.group_name}】设置${command}推送成功~`);
-
-  return true;
-}
-
-/**
- * 新增|删除B站动态推送UID
- * @param {*} e 
- */
-export async function updateBilibiliPush(e) {
-  if (new RegExp(/(订阅|增加|新增)/).test(e.msg)) {
-    biliPush.createBiliPush(e);
-  }
-  if (new RegExp(/(移除|去除|取消)/).test(e.msg)) {
-    biliPush.deleteBiliPush(e);
-  }
-  return true;
-}
-
-/**
- * 返回当前聊天对象推送的B站用户列表
- * @param {*} e 
- */
-export async function getBilibiliPushUserList(e) {
-  // 是否允许使用这个功能
-  if (!common.isAllowPushFunc(e)) {
+  let ck = e.msg.split(' ').slice(1).join(' ').trim();
+  if (!ck) {
+    e.reply("Cookie呢？我那么大个Cookie呢？\n示例：#B站登录ck SESSDATA=xxx; bili_jct=xxx");
     return false;
   }
-
-  if (e.msg.indexOf("群") > -1) {
-    if (!e.isMaster) {
-      e.reply("只有狗主人才可以查看所有群");
-      return false;
-    }
-
-    let groupMap = Bot.gl;
-    let groupList = [];
-
-    for (let [groupID, groupObj] of groupMap) {
-      groupID = "" + groupID;
-      let info = PushBilibiliDynamic[groupID];
-      if (!info) {
-        groupList.push(`${groupObj.group_name}(${groupID})：未开启，允许使用`);
-      } else {
-        PushBilibiliDynamic[groupID].pushTargetName = groupObj.group_name;
-        let tmp = PushBilibiliDynamic[groupID];
-        groupList.push(
-          `${groupObj.group_name}(${groupID})：${tmp.isNewsPush ? "已开启" : "已关闭"}，${tmp.adminPerm === false ? "无权限" : "有权限"}，${tmp.allowPush === false ? "禁止使用" : "允许使用"
-          }`
-        );
-      }
-    }
-
-    e.reply(`B站推送各群使用情况：\n${groupList.join("\n")}`);
-
-    return true;
-  }
-
-  // 推送对象记录
-  let pushID = "";
-  if (e.isGroup) {
-    pushID = e.group_id;
-  } else {
-    return false;
-  }
-  if (!pushID) {
-    return true;
-  }
-  if (!PushBilibiliDynamic[pushID]) {
-    return e.reply("开启过B站推送才能查哦");
-  }
-
-  let push = PushBilibiliDynamic[pushID];
-  let info = biliPush.biliUserList
-    .map((item) => {
-      return `${item.name}：${item.uid}`;
-    })
-    .join("\n");
-  let status = biliPush.isNewsPush ? "开启" : "关闭";
-
-  e.reply(`当前B站推送是【${status}】状态哦\n推送的B站用户有：\n${info}`);
-
-  return true;
-}
-
-export async function setBiliPushCookie(e) {
-  if (!e.isMaster) {
-    return false;
-  }
-  let ck = e.msg.split(' ')[1];
-  common.saveData("BilibiliCookies", e.msg, "yaml");
-
-  return true;
-}
-
-// 设置B站推送定时任务时间
-export async function setBiliPushTimeInterval(e) {
-  if (!e.isMaster) {
-    return false;
-  }
-
-  let time = e.msg.split("B站推送时间")[1].trim();
-  time = Number(time);
-
-  if (time <= 0 || time >= 60) {
-    e.reply("时间不能乱填哦\n时间单位：分钟，范围[1-60)\n示例：B站推送时间 10");
-    return true;
-  }
-
-  BilibiliPushConfig.dynamicPushTimeInterval = time;
-  await common.saveConfigJson(BilibiliPushConfig);
-  e.reply(`设置间隔时间 ${time}分钟 成功，重启后生效~\n请手动重启或者跟我说#重启`);
-
-  return true;
-}
-
-// 设置B站推送过期时间，对，就直接从上面搬下来了，为什么这么懒？就这么懒！
-export async function setBiliPushFaultTime(e) {
-  if (!e.isMaster) {
-    return false;
-  }
-
-  let time = Number(e.msg.split("B站推送过期时间")[1].trim());
-
-  if (time < 1 || time > 24) {
-    e.reply("时间不能乱填哦\n时间单位：小时，范围[1-24]\n示例：B站推送过期时间 1");
-    return true;
-  }
-
-  BilibiliPushConfig.dynamicPushFaultTime = time;
-  await common.saveConfigJson(BilibiliPushConfig);
-  e.reply(`设置过期时间 ${time}小时 成功，重启后生效\n请手动重启或者跟我说#重启`);
-
-  return true;
-}
-
-/**
- * 开启|关闭B站转发推送
- * @param {*} e 
- */
-export async function changeBiliPushTransmit(e) {
-  if (!common.functionAllow(e)) {
-    return false;
-  }
-
-  let pushID = "";
-  if (e.isGroup) {
-    pushID = e.group_id;
-  } else {
-    return false;
-  }
-  let info = PushBilibiliDynamic[pushID];
-  if (!info) {
-    e.reply("你还妹在这里开启过B站动态推送呢");
-    return true;
-  }
-
-  if (e.msg.indexOf("开启") > -1) {
-    PushBilibiliDynamic[pushID].pushTransmit = true;
-    e.reply("转发动态推送已开启");
-  }
-  if (e.msg.indexOf("关闭") > -1) {
-    PushBilibiliDynamic[pushID].pushTransmit = false;
-    e.reply("转发动态推送已关闭");
-  }
-
-  await common.savePushJson(PushBilibiliDynamic);
-
-  return true;
-}
-
-/**
- * 设置B站推送(默认|合并|图片)
- * @param {*} e 
- */
-export async function setBiliPushSendType(e) {
-  if (!common.functionAllow(e)) {
-    return false;
-  }
-
-  let pushID = "";
-  if (e.isGroup) {
-    pushID = e.group_id;
-  } else {
-    return false;
-  }
-
-  initBiliPushJson();
-  let info = PushBilibiliDynamic[pushID];
-  if (!info) {
-    e.reply("你还妹在这里开启过B站动态推送呢");
-    return true;
-  }
-
-  let type = e.msg.substr(e.msg.length - 2);
-  let typeCode = "";
-  switch (type) {
-    case "默认":
-      typeCode = "default";
-      break;
-    case "合并":
-      typeCode = "merge";
-      break;
-    case "图片":
-      typeCode = "picture";
-      break;
-  }
-  if (e.msg.indexOf("全局") > -1) {
-    BilibiliPushConfig.sendType = typeCode;
-    type = "全局" + type;
-    await common.saveConfigJson(BilibiliPushConfig);
-  } else {
-    PushBilibiliDynamic[pushID].sendType = typeCode;
-    await common.savePushJson(PushBilibiliDynamic);
-  }
-
-  e.reply(`设置B站推送方式：【${type}】成功！`);
-
+  common.saveData("BilibiliCookies", ck, "yaml");
+  e.reply("B站Cookie设置成功\n之后解析B站视频时会以该账号的登录态获取内容~");
   return true;
 }
 
 function msgAnalyse(e) {
-  biliAnalyse(e);
+  return biliAnalyse(e);
 }
 
+/**
+ * 渲染B站视频解析卡片
+ */
 async function renderCard(e, data) {
-  let type = await runtimeRender(e, '/analysePanel/bvAnalyse.html', data, {
+  return await runtimeRender(e, '/analysePanel/bvAnalyse.html', data, {
     escape: false,
-    scale: 1.6,
-  })
-  return type;
+    scale: 1.6
+  });
 }
 
+/**
+ * B站解析测试
+ * 示例：B站解析测试 BV1xxxxxx
+ */
 async function biliAnalyseTest(e) {
-  e.msg = '';
-  e.message = {data: ``}
-  e.raw_message = '[json消息]'
-  biliAnalyse(e);
+  let bv = (e.msg.match(/BV[0-9A-Za-z]{10}/) || [])[0]
+  if (!bv) {
+    e.reply("示例：B站解析测试 BV1xxxxxx")
+    return false
+  }
+  e.msg = BiliHost + '/video/' + bv
+  e.message = []
+  e.raw_message = e.msg
+  return biliAnalyse(e, true)
 }
 
-async function biliAnalyse(e) {
-  //获取cookies
-  let biliReqHeaders = common.BiliReqHeaders;
-  if (common.readData("BilibiliCookies", "yaml") !== "") {
-    biliReqHeaders.cookie = common.readData("BilibiliCookies", "yaml");
+/**
+ * 将网络图片下载为base64内嵌，避免渲染截图时网络未加载完导致图片显示不全
+ * 下载失败时回退为原URL，由渲染端继续加载
+ */
+async function getImageBase64(url, cookie = '') {
+  if (!url) return ''
+  try {
+    let headers = {
+      'User-Agent': common.BiliReqHeaders['user-agent'] || '',
+      'Referer': BiliHost + '/'
+    }
+    if (cookie) {
+      headers.cookie = cookie
+    }
+    let res = await fetch(url, { headers })
+    if (!res.ok) {
+      return url
+    }
+    let buf = Buffer.from(await res.arrayBuffer())
+    let type = res.headers.get('content-type') || 'image/jpeg'
+    return 'data:' + type + ';base64,' + buf.toString('base64')
+  } catch (e) {
+    return url
   }
-  let msg = e.msg
-  let urllist = ['b23.tv', 'm.bilibili.com', 'www.bilibili.com']
-  let reg2 = new RegExp(`${urllist[0]}|${urllist[1]}|${urllist[2]}`)
+}
 
-  let msgType = e.message[0].type;
+/**
+ * B站视频解析
+ * @param {*} e 
+ * @param {boolean} isTest 测试命令不受解析开关限制
+ */
+async function biliAnalyse(e, isTest = false) {
+  //解析开关关闭时不处理（测试命令不受影响）
+  if (!isTest && !common.isAnalyseEnabled("bili")) {
+    return false
+  }
+
+  // 复制一份公共请求头，避免修改全局配置
+  let biliReqHeaders = { ...common.BiliReqHeaders }
+  let biliCookies = common.readData("BilibiliCookies", "yaml")
+  if (biliCookies) {
+    biliReqHeaders.cookie = biliCookies
+  }
+
+  let msg = e.msg
+  let msgType = e.message?.[0]?.type
 
   if (!msg && msgType != 'json' && msgType != 'xml') {
     return false
   }
 
-  if (msgType == 'json') {
-    let json = JSON.parse(e.message[0].data)
-    msg = json.meta.detail_1?.qqdocurl || json.meta.news?.jumpUrl
-  }
-  if (msgType == 'xml') {
-    logger.warn(msg.toString())
-  }
-  if (!msg.match(reg2)) {
-    return false
-  }
-
-  let url = msg
-  let bilireg = /(BV.*?).{10}/
-  let bv = url.match(bilireg)
-  let videoInfo = {}
-  if (bv) {
-    // 存在bv长链接
-    bv = bv[0]
-  } else {
-    // 如果为短链接，先访问一次之后获取新的url再获取一次
-    // 获取url
-    let shortUrl = url.match(/https.*b23.tv.*[A-Za-z0-9]+/);
-    await fetch(shortUrl, { method: "get", headers: biliReqHeaders }).then(res => {
-      bv = res.url.match(bilireg)[0]
-    })
-  }
-  let bvUrl = BiliVideoApiUrl + `${bv}`
-  videoInfo = (await fetch(bvUrl, { method: "get", headers: biliReqHeaders }).then(res => res.json()))?.data || {}
-  let upInfoUrl = 'https://api.bilibili.com/x/relation/stat?vmid=' + videoInfo.owner.mid;
-  let upInfo = (await fetch(upInfoUrl, { method: "get", headers: biliReqHeaders }).then(res => res.json()))?.data || {}
-
-  let pic = videoInfo.pic
-  let videoTitle = videoInfo.title
-  let videoDesc = videoInfo.desc.length > 0 ? videoInfo.desc : '没有简介'
-  let videoDuration = convertSecondsToHMS(videoInfo.duration)
-  let videoTime = videoDuration[1].toString().padStart(2, '0') + ":" + videoDuration[2].toString().padStart(2, '0')
-  if (videoDuration[0] > 1) {
-    videoTime = videoDuration[0] + ":" + videoTime
-  }
-  let createTime = moment(new Date(videoInfo.ctime * 1000)).format('YYYY-MM-DD HH:mm:ss')
-  let upName = videoInfo.owner.name
-  let upFace = videoInfo.owner.face
-  let playTimes = videoInfo.stat.view > 10000 ? Math.round(videoInfo.stat.view / 1000) / 10 + "万" : videoInfo.stat.view
-  let danmaku = videoInfo.stat.danmaku > 10000 ? Math.round(videoInfo.stat.danmaku / 1000) / 10 + "万" : videoInfo.stat.danmaku
-  let reply = videoInfo.stat.reply > 10000 ? Math.round(videoInfo.stat.reply / 1000) / 10 + "万" : videoInfo.stat.reply
-  let favorite = videoInfo.stat.favorite > 10000 ? Math.round(videoInfo.stat.favorite / 1000) / 10 + "万" : videoInfo.stat.favorite
-  let coin = videoInfo.stat.coin > 10000 ? Math.round(videoInfo.stat.coin / 1000) / 10 + "万" : videoInfo.stat.coin
-  let share = videoInfo.stat.share > 10000 ? Math.round(videoInfo.stat.share / 1000) / 10 + "万" : videoInfo.stat.share
-  let like = videoInfo.stat.like > 10000 ? Math.round(videoInfo.stat.like / 1000) / 10 + "万" : videoInfo.stat.like
-  let fans = upInfo.follower > 10000 ? Math.round(upInfo.follower / 1000) / 10 + "万" : upInfo.follower
-
-  let data = { pic, videoTitle, videoDesc, videoTime, upName, upFace, playTimes, danmaku, reply, favorite, coin, share, like, fans, createTime }
-
   try {
-    // 渲染数据
-    await renderCard(e, data);
-    return false;
+    if (msgType == 'json') {
+      let json = JSON.parse(e.message[0].data)
+      msg = json?.meta?.detail_1?.qqdocurl || json?.meta?.news?.jumpUrl || msg
+    }
+    if (msgType == 'xml') {
+      logger.warn(msg.toString())
+    }
+
+    let urllist = ['b23.tv', 'm.bilibili.com', 'www.bilibili.com']
+    let reg2 = new RegExp(urllist.join('|'))
+    if (!msg.match(reg2)) {
+      return false
+    }
+
+    let bilireg = /BV[0-9A-Za-z]{10}/
+    let bv = msg.match(bilireg)
+    if (!bv) {
+      // 短链接：先访问一次，获取跳转后的真实链接再解析
+      let shortUrl = msg.match(/https:\/\/b23\.tv\/[A-Za-z0-9]+/)?.[0]
+      if (!shortUrl) {
+        return false
+      }
+      let res = await fetch(shortUrl, { method: "get", headers: biliReqHeaders })
+      bv = res.url.match(bilireg)
+      if (!bv) {
+        e.reply("B站短链接解析失败")
+        return false
+      }
+    }
+
+    let videoInfo = (await fetch(BiliVideoApiUrl + bv[0], { method: "get", headers: biliReqHeaders }).then(res => res.json()))?.data || {}
+
+    let upInfo = {}
+    if (videoInfo?.owner?.mid) {
+      let upInfoUrl = 'https://api.bilibili.com/x/relation/stat?vmid=' + videoInfo.owner.mid
+      upInfo = (await fetch(upInfoUrl, { method: "get", headers: biliReqHeaders }).then(res => res.json()))?.data || {}
+    }
+
+    // 封面图/头像提前下载为base64内嵌，防止渲染截图时网络未加载完导致图片显示不全
+    let [pic, upFace] = await Promise.all([
+      getImageBase64(videoInfo?.pic ? videoInfo.pic + '@480w_320h_!web-avatar.png' : '', biliCookies),
+      getImageBase64(videoInfo?.owner?.face ? videoInfo.owner.face + '@60w_60h_!web-avatar.png' : '', biliCookies)
+    ])
+
+    let videoTitle = videoInfo.title || '未知标题'
+    let videoDesc = formatVideoDesc(videoInfo.desc)
+    let videoDuration = convertSecondsToHMS(videoInfo.duration || 0)
+    let videoTime = videoDuration[1].toString().padStart(2, '0') + ':' + videoDuration[2].toString().padStart(2, '0')
+    if (videoDuration[0] > 1) {
+      videoTime = videoDuration[0] + ':' + videoTime
+    }
+    let createTime = moment(new Date((videoInfo.ctime || 0) * 1000)).format('YYYY-MM-DD HH:mm:ss')
+    let upName = videoInfo?.owner?.name || '未知UP主'
+    let playTimes = formatNum(videoInfo?.stat?.view)
+    let danmaku = formatNum(videoInfo?.stat?.danmaku)
+    let reply = formatNum(videoInfo?.stat?.reply)
+    let favorite = formatNum(videoInfo?.stat?.favorite)
+    let coin = formatNum(videoInfo?.stat?.coin)
+    let share = formatNum(videoInfo?.stat?.share)
+    let like = formatNum(videoInfo?.stat?.like)
+    let fans = formatNum(upInfo?.follower)
+
+    let data = { pic, videoTitle, videoDesc, videoTime, upName, upFace, playTimes, danmaku, reply, favorite, coin, share, like, fans, createTime }
+
+    await renderCard(e, data)
+    return false
   } catch (error) {
     logger.error('bilibili-Analyse', error)
     return await e.reply(error.message)
   }
+}
+
+/**
+ * 简介排版：统一换行符、去首尾空白（不截断）
+ */
+function formatVideoDesc(desc) {
+  if (!desc) {
+    return '没有简介'
+  }
+  return String(desc).replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim()
+}
+
+/**
+ * 数字格式化：过万显示为 x.x万
+ */
+function formatNum(num) {
+  num = Number(num) || 0
+  if (num > 10000) {
+    return Math.round(num / 1000) / 10 + '万'
+  }
+  return num
 }
 
 function convertSecondsToHMS(seconds) {
@@ -490,21 +212,30 @@ function convertSecondsToHMS(seconds) {
   return [hours, minutes, seconds];
 }
 
+/**
+ * 开启|关闭B站视频解析
+ * @param {*} e 
+ */
 function updateBvAnalyse(e) {
-
+  if (!common.adminAllow(e)) {
+    return false
+  }
+  if (e.msg.includes("开启")) {
+    common.setAnalyseEnabled("bili", true)
+    e.reply("B站视频解析已开启~")
+    return true
+  }
+  if (e.msg.includes("关闭")) {
+    common.setAnalyseEnabled("bili", false)
+    e.reply("B站视频解析已关闭~")
+    return true
+  }
+  return false
 }
 
 export default {
-  updateBilibiliPush,
-  getBilibiliPushUserList,
-  changeGroupBilibiliPush,
-  setBiliPushCookie,
-  setBiliPushTimeInterval,
-  setBiliPushFaultTime,
-  changeBiliPushTransmit,
-  setBiliPushSendType,
-  initBiliPushJson,
   msgAnalyse,
   updateBvAnalyse,
-  biliAnalyseTest
-};
+  biliAnalyseTest,
+  setBiliCookie
+}
