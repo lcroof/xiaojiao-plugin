@@ -32,6 +32,33 @@ function msgAnalyse(e) {
 }
 
 /**
+ * 判断是否为直播分享消息（B站直播分享不解析）
+ * 直播分享卡片特征：desc 形如 “UP主：xxx-房间号：yyy”，标题含“直播间”，或链接直达 live.bilibili.com
+ * @param {string} msg 提取后的消息文本
+ * @param {object} json json卡片数据
+ */
+function isLiveShareMsg(msg, json) {
+  // 链接直接指向直播房间
+  if (typeof msg === 'string' && msg.includes('live.bilibili.com')) {
+    return true
+  }
+  if (!json || typeof json !== 'object') {
+    return false
+  }
+  let news = json.meta?.news || {}
+  let detail = json.meta?.detail_1 || {}
+  let desc = String(news.desc || detail.desc || '')
+  let title = String(news.title || detail.title || '')
+  let url = String(news.jumpUrl || detail.qqdocurl || '')
+  return (
+    url.includes('live.bilibili.com') ||
+    desc.includes('房间号') ||
+    desc.includes('直播间') ||
+    title.includes('直播间')
+  )
+}
+
+/**
  * 渲染B站视频解析卡片
  */
 async function renderCard(e, data) {
@@ -112,6 +139,11 @@ async function biliAnalyse(e, isTest = false) {
     if (msgType == 'json') {
       let json = JSON.parse(e.message[0].data)
       msg = json?.meta?.detail_1?.qqdocurl || json?.meta?.news?.jumpUrl || msg
+      // 直播分享消息（如"房间号：xxx"卡片）不解析
+      if (isLiveShareMsg(msg, json)) {
+        logger.info('bilibili-Analyse: 直播分享消息，跳过解析')
+        return false
+      }
     }
     if (msgType == 'xml') {
       logger.warn(msg.toString())
@@ -132,6 +164,11 @@ async function biliAnalyse(e, isTest = false) {
         return false
       }
       let res = await fetch(shortUrl, { method: "get", headers: biliReqHeaders })
+      // 短链接跳转到直播房间则不解析（直播分享不解析）
+      if (res.url.includes('live.bilibili.com')) {
+        logger.info('bilibili-Analyse: 短链接跳转到直播房间，跳过解析')
+        return false
+      }
       bv = res.url.match(bilireg)
       if (!bv) {
         e.reply("B站短链接解析失败")
@@ -160,7 +197,8 @@ async function biliAnalyse(e, isTest = false) {
     if (videoDuration[0] > 1) {
       videoTime = videoDuration[0] + ':' + videoTime
     }
-    let createTime = moment(new Date((videoInfo.ctime || 0) * 1000)).format('YYYY-MM-DD HH:mm:ss')
+    // 优先用发布时间 pubdate（定时发布的视频 pubdate 是定时发布时间，ctime 只是上传时间，会显示成凌晨）
+    let createTime = moment(new Date((videoInfo.pubdate || videoInfo.ctime || 0) * 1000)).format('YYYY-MM-DD HH:mm:ss')
     let upName = videoInfo?.owner?.name || '未知UP主'
     let playTimes = formatNum(videoInfo?.stat?.view)
     let danmaku = formatNum(videoInfo?.stat?.danmaku)
