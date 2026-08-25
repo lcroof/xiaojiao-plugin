@@ -37,7 +37,8 @@ body {
 .container {
   width: 600px;
   padding: 20px 15px 10px 15px;
-  background-size: cover; 
+  background-size: auto;
+  background-repeat: repeat; /* 背景图平铺显示，不拉伸 */
   background-image: url('biliPluginBgPic.jpg');
 }
 

@@ -4,8 +4,56 @@ import { botConfig } from "../common/commonFunction.js"
 import moment from "moment";
 import fetch from "node-fetch";
 
+/**
+ * 带超时的fetch：接口偶发连接挂起，若无超时会一直等待导致"消息没解析"（重发又好了）
+ * @param {string} url 
+ * @param {object} options fetch选项
+ * @param {number} timeout 超时毫秒，默认10秒
+ */
+function fetchWithTimeout(url, options = {}, timeout = 10000) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeout)
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer))
+}
+
+/** 是否为请求超时/中断错误 */
+function isAbortError(err) {
+  return err?.name === 'AbortError'
+}
+
+/**
+ * 带超时和重试的fetch：超时/网络错误/5xx 都自动重试，最多重试5次（共6次尝试）后才抛出
+ * @param {string} url 
+ * @param {object} options fetch选项
+ * @param {number} timeout 单次超时毫秒
+ * @param {number} retries 重试次数，默认5
+ */
+async function fetchRetry(url, options = {}, timeout = 10000, retries = 5) {
+  let lastErr
+  for (let i = 0; i <= retries; i++) {
+    try {
+      let res = await fetchWithTimeout(url, options, timeout)
+      if (res.status >= 500) {
+        lastErr = new Error(`HTTP ${res.status}`)
+      } else {
+        return res
+      }
+    } catch (err) {
+      lastErr = err
+    }
+    if (i < retries) {
+      logger.warn(`nga-Analyse: 请求失败(${i + 1}/${retries + 1}次尝试) ${url} ${lastErr?.name || lastErr?.message}，${500 * (i + 1)}ms后重试`)
+      await new Promise(r => setTimeout(r, 500 * (i + 1)))
+    } else {
+      logger.error(`nga-Analyse: 请求失败(${i + 1}/${retries + 1}次尝试) ${url} ${lastErr?.name || lastErr?.message}`)
+    }
+  }
+  throw lastErr
+}
+
 async function ngaContext(e, isTest = false) {
-    let msg = e.msg;
+    // 消息文本：json/分享卡片会把原始字符串拼进 e.msg，斜杠为转义形式（\/），先归一化
+    let msg = String(e.msg || '').replace(/\\\//g, '/');
     let titlePage = {}
     let replyPage = {}
     let allReply = []
@@ -15,13 +63,20 @@ async function ngaContext(e, isTest = false) {
         return false
     }
 
-    if (e.raw_message == '[json消息]') {
-        let json = JSON.parse(e.message[0]?.data || '{}')
-        msg = msg || json?.meta?.detail_1?.qqdocurl || json?.meta?.news?.jumpUrl
+    // 从消息段里提取卡片链接（json/分享卡片，不限于第一段，兼容"文字+卡片"混合消息）
+    for (const seg of e.message || []) {
+        if (seg.type === 'json') {
+            try {
+                let json = JSON.parse(seg.data)
+                msg = json?.meta?.detail_1?.qqdocurl || json?.meta?.news?.jumpUrl || msg
+            } catch (err) {
+                logger.error('nga-Analyse: json卡片解析失败', err)
+            }
+        } else if (seg.type === 'share' && seg.data?.url) {
+            msg = seg.data.url
+        }
     }
-    if (e.raw_message == '[xml消息]') {
-        logger.warn(msg.toString())
-    }
+    logger.debug(`nga-Analyse: 规则触发 segments=${e.message?.length} msgType=${e.message?.[0]?.type} 提取=${String(msg).slice(0, 80)}`)
     if (!msg.match(/tid\=[0-9]+/)) {
         return false
     }
@@ -36,7 +91,11 @@ async function ngaContext(e, isTest = false) {
     try {
         postInfo = await ngaUrlPost(postUrl, tid, 1)
     } catch (err) {
-        e.reply(`获取主题内容失败：${err.message}`)
+        if (isAbortError(err)) {
+            e.reply('NGA接口请求超时，请稍后重试~')
+        } else {
+            e.reply(`获取主题内容失败：${err.message}`)
+        }
         return false
     }
 
@@ -74,7 +133,11 @@ async function ngaContext(e, isTest = false) {
             });
         }
     } catch (err) {
-        e.reply(`获取后续楼层失败：${err.message}`)
+        if (isAbortError(err)) {
+            e.reply('NGA获取后续楼层超时，请稍后重试~')
+        } else {
+            e.reply(`获取后续楼层失败：${err.message}`)
+        }
         return false
     }
 
@@ -329,7 +392,7 @@ async function ngaUrlPost(posturl, tid, pageCount) {
     }
 
     //编一个RSS申请头，POST这个tid，获取所有data
-    let res = await fetch(posturl, {
+    let res = await fetchRetry(posturl, {
         method: "POST",
         headers: headers,
         body: formData.toString()

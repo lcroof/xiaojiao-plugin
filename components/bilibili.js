@@ -85,6 +85,48 @@ async function biliAnalyseTest(e) {
 }
 
 /**
+ * 带超时的fetch：b23.tv/bilibili接口偶发连接挂起，若无超时会一直等待导致"消息没解析"（重发又好了）
+ * @param {string} url 
+ * @param {object} options fetch选项
+ * @param {number} timeout 超时毫秒，默认10秒
+ */
+function fetchWithTimeout(url, options = {}, timeout = 10000) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeout)
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer))
+}
+
+/**
+ * 带超时和重试的fetch：超时/网络错误/5xx 都自动重试，最多重试5次（共6次尝试）后才抛出
+ * @param {string} url 
+ * @param {object} options fetch选项
+ * @param {number} timeout 单次超时毫秒
+ * @param {number} retries 重试次数，默认5
+ */
+async function fetchRetry(url, options = {}, timeout = 10000, retries = 5) {
+  let lastErr
+  for (let i = 0; i <= retries; i++) {
+    try {
+      let res = await fetchWithTimeout(url, options, timeout)
+      if (res.status >= 500) {
+        lastErr = new Error(`HTTP ${res.status}`)
+      } else {
+        return res
+      }
+    } catch (err) {
+      lastErr = err
+    }
+    if (i < retries) {
+      logger.warn(`bilibili-Analyse: 请求失败(${i + 1}/${retries + 1}次尝试) ${url} ${lastErr?.name || lastErr?.message}，${500 * (i + 1)}ms后重试`)
+      await new Promise(r => setTimeout(r, 500 * (i + 1)))
+    } else {
+      logger.error(`bilibili-Analyse: 请求失败(${i + 1}/${retries + 1}次尝试) ${url} ${lastErr?.name || lastErr?.message}`)
+    }
+  }
+  throw lastErr
+}
+
+/**
  * 将网络图片下载为base64内嵌，避免渲染截图时网络未加载完导致图片显示不全
  * 下载失败时回退为原URL，由渲染端继续加载
  */
@@ -98,7 +140,7 @@ async function getImageBase64(url, cookie = '') {
     if (cookie) {
       headers.cookie = cookie
     }
-    let res = await fetch(url, { headers })
+    let res = await fetchWithTimeout(url, { headers }, 8000)
     if (!res.ok) {
       return url
     }
@@ -128,42 +170,57 @@ async function biliAnalyse(e, isTest = false) {
     biliReqHeaders.cookie = biliCookies
   }
 
-  let msg = e.msg
-  let msgType = e.message?.[0]?.type
+  // 消息文本：json/分享卡片会把原始字符串拼进 e.msg，其中的链接斜杠是转义形式（\/），先归一化
+  let msg = String(e.msg || '').replace(/\\\//g, '/')
 
-  if (!msg && msgType != 'json' && msgType != 'xml') {
-    return false
+  // 从消息段里提取卡片链接（json/分享卡片，不限于第一段，兼容"文字+卡片"混合消息）
+  let cardJson = null
+  for (const seg of e.message || []) {
+    if (seg.type === 'json') {
+      try {
+        let json = JSON.parse(seg.data)
+        cardJson = json
+        msg = json?.meta?.detail_1?.qqdocurl || json?.meta?.news?.jumpUrl || msg
+      } catch (err) {
+        logger.error('bilibili-Analyse: json卡片解析失败', err)
+      }
+    } else if (seg.type === 'share' && seg.data?.url) {
+      msg = seg.data.url
+    }
   }
 
+  logger.debug(`bilibili-Analyse: 规则触发 segments=${e.message?.length} msgType=${e.message?.[0]?.type} 提取=${String(msg).slice(0, 80)}`)
+
   try {
-    if (msgType == 'json') {
-      let json = JSON.parse(e.message[0].data)
-      msg = json?.meta?.detail_1?.qqdocurl || json?.meta?.news?.jumpUrl || msg
-      // 直播分享消息（如"房间号：xxx"卡片）不解析
-      if (isLiveShareMsg(msg, json)) {
-        logger.info('bilibili-Analyse: 直播分享消息，跳过解析')
-        return false
-      }
-    }
-    if (msgType == 'xml') {
-      logger.warn(msg.toString())
+    // 直播分享消息（如"房间号：xxx"卡片、live.bilibili.com 直链）不解析
+    if (isLiveShareMsg(msg, cardJson)) {
+      logger.info('bilibili-Analyse: 直播分享消息，跳过解析')
+      return false
     }
 
-    let urllist = ['b23.tv', 'm.bilibili.com', 'www.bilibili.com']
+    let urllist = ['b23.tv', 'bilibili.com']
     let reg2 = new RegExp(urllist.join('|'))
     if (!msg.match(reg2)) {
+      logger.debug(`bilibili-Analyse: 无B站链接，跳过 (${String(msg).slice(0, 50)})`)
       return false
     }
 
     let bilireg = /BV[0-9A-Za-z]{10}/
     let bv = msg.match(bilireg)
     if (!bv) {
-      // 短链接：先访问一次，获取跳转后的真实链接再解析
-      let shortUrl = msg.match(/https:\/\/b23\.tv\/[A-Za-z0-9]+/)?.[0]
+      // 短链接：先访问一次，获取跳转后的真实链接再解析（兼容 http/https、无协议头、短码含 -/_）
+      let shortUrl = msg.match(/https?:\/\/b23\.tv\/[A-Za-z0-9\-_]+/)?.[0]
       if (!shortUrl) {
+        let bare = msg.match(/b23\.tv\/[A-Za-z0-9\-_]+/)?.[0]
+        if (bare) {
+          shortUrl = 'https://' + bare
+        }
+      }
+      if (!shortUrl) {
+        logger.debug(`bilibili-Analyse: 未找到b23.tv短链，跳过 (${String(msg).slice(0, 50)})`)
         return false
       }
-      let res = await fetch(shortUrl, { method: "get", headers: biliReqHeaders })
+      let res = await fetchRetry(shortUrl, { method: "get", headers: biliReqHeaders })
       // 短链接跳转到直播房间则不解析（直播分享不解析）
       if (res.url.includes('live.bilibili.com')) {
         logger.info('bilibili-Analyse: 短链接跳转到直播房间，跳过解析')
@@ -176,12 +233,12 @@ async function biliAnalyse(e, isTest = false) {
       }
     }
 
-    let videoInfo = (await fetch(BiliVideoApiUrl + bv[0], { method: "get", headers: biliReqHeaders }).then(res => res.json()))?.data || {}
+    let videoInfo = (await fetchRetry(BiliVideoApiUrl + bv[0], { method: "get", headers: biliReqHeaders }).then(res => res.json()))?.data || {}
 
     let upInfo = {}
     if (videoInfo?.owner?.mid) {
       let upInfoUrl = 'https://api.bilibili.com/x/relation/stat?vmid=' + videoInfo.owner.mid
-      upInfo = (await fetch(upInfoUrl, { method: "get", headers: biliReqHeaders }).then(res => res.json()))?.data || {}
+      upInfo = (await fetchRetry(upInfoUrl, { method: "get", headers: biliReqHeaders }).then(res => res.json()))?.data || {}
     }
 
     // 封面图/头像提前下载为base64内嵌，防止渲染截图时网络未加载完导致图片显示不全
@@ -214,6 +271,11 @@ async function biliAnalyse(e, isTest = false) {
     await renderCard(e, data)
     return false
   } catch (error) {
+    // 网络请求超时/中断：给出友好提示，而不是静默（重发可再次触发解析）
+    if (error?.name === 'AbortError') {
+      logger.error('bilibili-Analyse: 请求超时', error)
+      return await e.reply('B站接口请求超时，请稍后重试~')
+    }
     logger.error('bilibili-Analyse', error)
     return await e.reply(error.message)
   }

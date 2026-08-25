@@ -24,7 +24,8 @@ export class MessageAnalyse extends plugin {
                     fnc: 'biliMsgAnalyse'
                 },
                 {
-                    reg: `(https://nga|https://bbs.nga).*tid\=[0-9]+`,
+                    // 兼容 json 卡片里转义斜杠的链接，覆盖 ngabbs.com / bbs.nga.cn / nga.178.com
+                    reg: /(ngabbs\.com|bbs\.nga|nga\.178).*tid\=[0-9]+/,
                     fnc: 'ngaMsgAnalyse'
                 },
                 {
